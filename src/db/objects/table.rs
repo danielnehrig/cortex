@@ -12,7 +12,7 @@ pub struct Table<T: DatabaseSpeicifics + Clone> {
 pub struct TableProp {
     pub name: &'static str,
     pub t_type: PropType,
-    pub annotation: Vec<PropAnnotation>,
+    pub annotation: Option<PropAnnotation>,
 }
 
 #[derive(Debug, Clone)]
@@ -72,16 +72,11 @@ impl<T: DatabaseSpeicifics + Clone> Table<T> {
 }
 
 impl TableProp {
-    pub fn new(name: &'static str, t_type: PropType) -> Self {
+    pub fn new(name: &'static str, t_type: PropType, annotation: Option<PropAnnotation>) -> Self {
         TableProp {
             name,
             t_type,
-            annotation: Vec::new(),
+            annotation,
         }
-    }
-
-    pub fn add_annotation(&mut self, annotation: PropAnnotation) -> Self {
-        self.annotation.push(annotation);
-        self.to_owned()
     }
 }
