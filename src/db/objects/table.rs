@@ -34,7 +34,7 @@ pub enum PropType {
     Smallint,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum PropAnnotation {
     PrimaryKey,
     Unique,
@@ -42,6 +42,8 @@ pub enum PropAnnotation {
     Default,
     Check,
     Foreign,
+    #[default]
+    Empty,
 }
 
 #[derive(Debug, Clone)]
