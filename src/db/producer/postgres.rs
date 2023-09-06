@@ -12,8 +12,6 @@ impl StatementProducer<PostgresStatementProducer> for PostgresStatementProducer 
     /// ```
     /// use schemacreator::db::{
     /// objects::{
-    /// statement::{CreateObject, Statement},
-    /// step::{Step, StepType},
     /// table::{PropType, Table, TableProp, TableAnnotation, PropAnnotation},
     /// },
     /// producer::{postgres::PostgresStatementProducer, StatementProducer},
@@ -34,9 +32,7 @@ impl StatementProducer<PostgresStatementProducer> for PostgresStatementProducer 
         let mut annotations = vec![];
         for x in &table.props {
             let t = Self::serialize_prop_type(&x.t_type);
-            let a = Self::serialize_prop_annotation(
-                &x.annotation.clone().map(|x| x).unwrap_or_default(),
-            );
+            let a = Self::serialize_prop_annotation(&x.annotation.clone().unwrap_or_default());
             props.push(format!("{} {} {}", x.name, t, a));
         }
         for x in &table.annotations {
@@ -76,6 +72,7 @@ impl DatabaseSpeicifics for PostgresStatementProducer {
             PropAnnotation::Check => todo!(),
             PropAnnotation::Foreign => todo!(),
             PropAnnotation::Empty => "".to_string(),
+            PropAnnotation::Constraint(_) => todo!(),
         }
     }
 

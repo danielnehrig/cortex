@@ -1,9 +1,15 @@
-use crate::db::producer::DatabaseSpeicifics;
+use std::fmt::Display;
+
+use crate::db::producer::{postgres::PostgresStatementProducer, DatabaseSpeicifics};
 
 #[derive(Debug, Clone)]
+/// Table struxt for creating tables
 pub struct Table<T: DatabaseSpeicifics + Clone> {
+    /// name of the table
     pub name: &'static str,
+    /// properties of the table
     pub props: Vec<TableProp>,
+    /// annotations of the table
     pub annotations: Vec<TableAnnotation>,
     _marker: std::marker::PhantomData<T>,
 }
@@ -32,6 +38,7 @@ pub enum PropType {
     Timestamp,
     Bigint,
     Smallint,
+    // ...
 }
 
 #[derive(Debug, Clone, Default)]
@@ -42,6 +49,7 @@ pub enum PropAnnotation {
     Default,
     Check,
     Foreign,
+    Constraint(Box<PropAnnotation>),
     #[default]
     Empty,
 }
@@ -72,6 +80,20 @@ impl<T: DatabaseSpeicifics + Clone> Table<T> {
         self.to_owned()
     }
 }
+
+// impl Display for Table<PostgresStatementProducer> {
+// fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+// let mut props = String::new();
+// for prop in &self.props {
+// props.push_str(&format!("{} {}, ", prop.name, prop.t_type));
+// }
+// let mut annotations = String::new();
+// for annotation in &self.annotations {
+// annotations.push_str(&format!("{}, ", annotation));
+// }
+// write!(f, "CREATE TABLE {} ({}) {}", self.name, props, annotations)
+// }
+// }
 
 impl TableProp {
     pub fn new(name: &'static str, t_type: PropType, annotation: Option<PropAnnotation>) -> Self {

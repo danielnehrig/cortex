@@ -1,0 +1,3 @@
+- cargo install cargo-llvm-cov
+- cargo install cargo-nextest
+- grcov . --binary-path ./target/llvm-cov-target/debug/deps -s . -t html --branch --ignore-not-existing --ignore '../*' --ignore "/*" -o target/coverage/html
