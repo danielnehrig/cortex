@@ -1,8 +1,8 @@
 use crate::db::{objects::table::Table, producer::DatabaseSpeicifics};
 
 #[derive(Debug, Clone)]
-pub enum Statement<T: DatabaseSpeicifics + Clone> {
-    Create(CreateObject<T>),
+pub enum Statement<'a, T: DatabaseSpeicifics + Clone> {
+    Create(CreateObject<'a, T>),
     Drop,
     Alter,
     Insert,
@@ -34,8 +34,8 @@ pub enum Statement<T: DatabaseSpeicifics + Clone> {
 }
 
 #[derive(Debug, Clone)]
-pub enum CreateObject<T: DatabaseSpeicifics + Clone> {
-    Table(Table<T>),
+pub enum CreateObject<'a, T: DatabaseSpeicifics + Clone> {
+    Table(Table<'a, T>),
     Sequence,
     Database,
     Role,

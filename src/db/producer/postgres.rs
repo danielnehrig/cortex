@@ -27,7 +27,7 @@ impl StatementProducer<PostgresStatementProducer> for PostgresStatementProducer 
     ///    let statement = producer.create_table(&table);
     ///    assert_eq!(statement, "CREATE TABLE test (id INT PRIMARY KEY, name TEXT NOT NULL) PARTITION;");
     /// ```
-    fn create_table(&self, table: &Table<PostgresStatementProducer>) -> String {
+    fn create_table(&self, table: &Table<Self>) -> String {
         let mut props = vec![];
         let mut annotations = vec![];
         for x in &table.props {

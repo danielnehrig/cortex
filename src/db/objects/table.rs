@@ -1,22 +1,20 @@
-use std::fmt::Display;
-
-use crate::db::producer::{postgres::PostgresStatementProducer, DatabaseSpeicifics};
+use crate::db::producer::DatabaseSpeicifics;
 
 #[derive(Debug, Clone)]
 /// Table struxt for creating tables
-pub struct Table<T: DatabaseSpeicifics + Clone> {
+pub struct Table<'a, T: DatabaseSpeicifics + Clone> {
     /// name of the table
-    pub name: &'static str,
+    pub name: &'a str,
     /// properties of the table
-    pub props: Vec<TableProp>,
+    pub props: Vec<TableProp<'a>>,
     /// annotations of the table
     pub annotations: Vec<TableAnnotation>,
     _marker: std::marker::PhantomData<T>,
 }
 
 #[derive(Debug, Clone)]
-pub struct TableProp {
-    pub name: &'static str,
+pub struct TableProp<'a> {
+    pub name: &'a str,
     pub t_type: PropType,
     pub annotation: Option<PropAnnotation>,
 }
@@ -60,8 +58,8 @@ pub enum TableAnnotation {
     View,
 }
 
-impl<T: DatabaseSpeicifics + Clone> Table<T> {
-    pub fn new(name: &'static str) -> Self {
+impl<'a, T: DatabaseSpeicifics + Clone> Table<'a, T> {
+    pub fn new(name: &'a str) -> Self {
         Table {
             name,
             props: Vec::new(),
@@ -70,7 +68,7 @@ impl<T: DatabaseSpeicifics + Clone> Table<T> {
         }
     }
 
-    pub fn add_prop(&mut self, prop: TableProp) -> Self {
+    pub fn add_prop(&mut self, prop: TableProp<'a>) -> Self {
         self.props.push(prop);
         self.to_owned()
     }
@@ -81,22 +79,8 @@ impl<T: DatabaseSpeicifics + Clone> Table<T> {
     }
 }
 
-// impl Display for Table<PostgresStatementProducer> {
-// fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-// let mut props = String::new();
-// for prop in &self.props {
-// props.push_str(&format!("{} {}, ", prop.name, prop.t_type));
-// }
-// let mut annotations = String::new();
-// for annotation in &self.annotations {
-// annotations.push_str(&format!("{}, ", annotation));
-// }
-// write!(f, "CREATE TABLE {} ({}) {}", self.name, props, annotations)
-// }
-// }
-
-impl TableProp {
-    pub fn new(name: &'static str, t_type: PropType, annotation: Option<PropAnnotation>) -> Self {
+impl<'a> TableProp<'a> {
+    pub fn new(name: &'a str, t_type: PropType, annotation: Option<PropAnnotation>) -> Self {
         TableProp {
             name,
             t_type,
