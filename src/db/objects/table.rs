@@ -2,7 +2,7 @@ use crate::db::producer::DatabaseSpeicifics;
 
 #[derive(Debug, Clone)]
 /// Table struxt for creating tables
-pub struct Table<'a, T: DatabaseSpeicifics + Clone> {
+pub struct Table<'a, T: DatabaseSpeicifics> {
     /// name of the table
     pub name: &'a str,
     /// properties of the table

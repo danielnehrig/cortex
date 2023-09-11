@@ -1,7 +1,7 @@
 use crate::db::{objects::statement::Statement, producer::DatabaseSpeicifics};
 
 #[derive(Debug, Clone)]
-pub struct Step<'a, T: DatabaseSpeicifics + Clone> {
+pub struct Step<'a, T: DatabaseSpeicifics> {
     pub name: &'a str,
     pub s_type: StepType,
     pub statements: Vec<Statement<'a, T>>,
@@ -12,7 +12,7 @@ pub enum StepType {
     Update,
 }
 
-impl<'a, T: DatabaseSpeicifics + Clone> Step<'a, T> {
+impl<'a, T: DatabaseSpeicifics> Step<'a, T> {
     pub fn new(name: &'a str, s_type: StepType) -> Self {
         Self {
             name,
@@ -21,8 +21,8 @@ impl<'a, T: DatabaseSpeicifics + Clone> Step<'a, T> {
         }
     }
 
-    pub fn add_statement(&mut self, statement: Statement<'a, T>) -> Self {
+    pub fn add_statement(mut self, statement: Statement<'a, T>) -> Self {
         self.statements.push(statement);
-        self.to_owned()
+        self
     }
 }
