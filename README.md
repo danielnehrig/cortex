@@ -59,10 +59,11 @@ fn main() {
 
 ## Extend `cortex` to Other Databases 🌍
 
-Simply implement the `Database` and `SchemaEngine` traits for your database:
+Simply implement these traits for your database:
+and take a look at the example of the `PostgresStatementProducer`
 
 ```rust
-impl DatabaseSpeicifics for PostgresStatementProducer {}
+impl DatabaseSpeicifics for SomeDatabaseStatementProducer {}
 impl CreateableObject for Table<'_, SomeDatabaseStatementProducer> {}
 impl DropableObject for Table<'_, SomeDatabaseStatementProducer> {}
 impl<'a> Display for Table<'a, SomeDatabaseStatementProducer> {}
@@ -80,8 +81,6 @@ Got ideas or improvements?
 
 - Open an issue for bugs, enhancements, or feature requests.
 - Fork, improve, and submit a pull request.
-
-Of course! Here's the "Roadmap" section for your `cortex` README:
 
 ---
 
