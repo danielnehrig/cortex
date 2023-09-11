@@ -1,6 +1,6 @@
 use schemacreator::db::{
     objects::{
-        statement::{CreateableObject, Statement},
+        statement::Statement,
         step::{Step, StepType},
         table::{PropType, Table, TableProp},
     },
@@ -15,7 +15,8 @@ fn main() {
     ));
     let orders = Table::new("orders").add_prop(TableProp::new("id", PropType::Int, None));
     let data = Step::new("Init Schema", StepType::Update)
-        .add_statement(Statement::Create(CreateableObject::Table(users.clone())))
-        .add_statement(Statement::Create(CreateableObject::Table(orders)));
+        .add_statement(Statement::Create(&users))
+        .add_statement(Statement::Create(&orders))
+        .add_statement(Statement::Drop(&users));
     println!("{}", data);
 }

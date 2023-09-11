@@ -1,6 +1,6 @@
 use crate::db::{objects::statement::Statement, producer::DatabaseSpeicifics};
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Step<'a, T: DatabaseSpeicifics> {
     pub name: &'a str,
     pub s_type: StepType,
