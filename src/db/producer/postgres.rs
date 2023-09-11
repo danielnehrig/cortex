@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::db::{
     objects::{
-        statement::{CreateableObject, Statement},
+        statement::{CreateableObject, DropableObject, Statement},
         step::Step,
         table::{PropAnnotation, PropType, Table, TableAnnotation},
     },
@@ -51,9 +51,20 @@ impl DatabaseSpeicifics for PostgresStatementProducer {
 impl Display for Statement<'_, crate::db::producer::postgres::PostgresStatementProducer> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Statement::Create(x) => match x {
-                CreateableObject::Table(x) => write!(f, "CREATE {}", x),
-            },
+            Statement::Create(x) => write!(
+                f,
+                "CREATE {}",
+                match x {
+                    CreateableObject::Table(x) => format!("{}", x),
+                }
+            ),
+            Statement::Drop(x) => write!(
+                f,
+                "DROP {}",
+                match x {
+                    DropableObject::Table(x) => format!("{}", x),
+                }
+            ),
         }
     }
 }
