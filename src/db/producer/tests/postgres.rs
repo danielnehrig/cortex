@@ -21,7 +21,7 @@ mod test {
             .add_annotation(TableAnnotation::Partition);
         assert_eq!(
             format!("{table}"),
-            "CREATE TABLE test (id INT PRIMARY KEY, name TEXT NOT NULL) PARTITION;"
+            "TABLE test (id INT PRIMARY KEY, name TEXT NOT NULL) PARTITION;"
         );
     }
 }
