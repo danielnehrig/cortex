@@ -33,7 +33,7 @@ cortex = "0.1.0"
 Define and create a schema:
 
 ```rust
-use schemacreator::db::{
+use cortex::db::{
     objects::{
         statement::Statement,
         step::{Step, StepType},
