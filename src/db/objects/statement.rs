@@ -1,17 +1,17 @@
-use crate::db::{objects::table::Table, producer::DatabaseSpeicifics};
+use std::fmt::Display;
 
-#[derive(Debug, Clone)]
+use crate::db::producer::DatabaseSpeicifics;
+
+#[derive(Clone)]
 pub enum Statement<'a, T: DatabaseSpeicifics> {
-    Create(CreateableObject<'a, T>),
-    Drop(DropableObject<'a, T>),
+    Create(&'a dyn CreateableObject),
+    Drop(&'a dyn DropableObject),
+    _Phantom(std::marker::PhantomData<T>),
 }
 
-#[derive(Debug, Clone)]
-pub enum CreateableObject<'a, T: DatabaseSpeicifics> {
-    Table(Table<'a, T>),
+pub trait CreateableObject: Display {
+    fn create(&self) -> String;
 }
-
-#[derive(Debug, Clone)]
-pub enum DropableObject<'a, T: DatabaseSpeicifics> {
-    Table(Table<'a, T>),
+pub trait DropableObject: Display {
+    fn drop(&self) -> String;
 }

@@ -48,23 +48,53 @@ impl DatabaseSpeicifics for PostgresStatementProducer {
     }
 }
 
+impl CreateableObject for Table<'_, PostgresStatementProducer> {
+    fn create(&self) -> String {
+        let props = &self
+            .props
+            .iter()
+            .map(|x| {
+                let t = PostgresStatementProducer::serialize_prop_type(&x.t_type);
+                match &x.annotation.clone() {
+                    Some(p) => {
+                        let a = PostgresStatementProducer::serialize_prop_annotation(p);
+                        format!("{} {} {}", x.name, t, a)
+                    }
+                    None => {
+                        format!("{} {}", x.name, t)
+                    }
+                }
+            })
+            .collect::<Vec<String>>()
+            .join(", ");
+        let annotations = &self
+            .annotations
+            .iter()
+            .map(PostgresStatementProducer::serialize_table_annotation)
+            .collect::<Vec<String>>()
+            .join(" ");
+
+        match (props.is_empty(), annotations.is_empty()) {
+            (true, true) => format!("TABLE {};", self.name),
+            (true, false) => format!("TABLE {} {};", self.name, annotations),
+            (false, true) => format!("TABLE {} ({});", self.name, props),
+            (false, false) => format!("TABLE {} ({}) {};", self.name, props, annotations),
+        }
+    }
+}
+
+impl DropableObject for Table<'_, PostgresStatementProducer> {
+    fn drop(&self) -> String {
+        format!("TABLE {};", self.name)
+    }
+}
+
 impl Display for Statement<'_, crate::db::producer::postgres::PostgresStatementProducer> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Statement::Create(x) => write!(
-                f,
-                "CREATE {}",
-                match x {
-                    CreateableObject::Table(x) => format!("{}", x),
-                }
-            ),
-            Statement::Drop(x) => write!(
-                f,
-                "DROP {}",
-                match x {
-                    DropableObject::Table(x) => format!("{}", x),
-                }
-            ),
+            Statement::Create(x) => write!(f, "CREATE {}", x.create()),
+            Statement::Drop(x) => write!(f, "DROP {}", x.drop()),
+            Statement::_Phantom(_) => panic!(),
         }
     }
 }
@@ -83,30 +113,6 @@ impl Display for Step<'_, PostgresStatementProducer> {
 
 impl<'a> Display for Table<'a, PostgresStatementProducer> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let props = &self
-            .props
-            .iter()
-            .map(|x| {
-                let t = PostgresStatementProducer::serialize_prop_type(&x.t_type);
-                let a = PostgresStatementProducer::serialize_prop_annotation(
-                    &x.annotation.clone().unwrap_or_default(),
-                );
-                format!("{} {} {}", x.name, t, a)
-            })
-            .collect::<Vec<String>>()
-            .join(", ");
-        let annotations = &self
-            .annotations
-            .iter()
-            .map(PostgresStatementProducer::serialize_table_annotation)
-            .collect::<Vec<String>>()
-            .join(" ");
-
-        match (props.is_empty(), annotations.is_empty()) {
-            (true, true) => write!(f, "TABLE {};", self.name),
-            (true, false) => write!(f, "TABLE {} {};", self.name, annotations),
-            (false, true) => write!(f, "TABLE {} ({});", self.name, props),
-            (false, false) => write!(f, "TABLE {} ({}) {};", self.name, props, annotations),
-        }
+        write!(f, "{}", self.create())
     }
 }
