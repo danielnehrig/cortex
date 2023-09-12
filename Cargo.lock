@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "schemacreator"
+name = "cortex"
 version = "0.1.0"

@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 use crate::db::{
     objects::{
+        database::Database,
         statement::{CreateableObject, DropableObject, Statement},
         step::Step,
         table::{PropAnnotation, PropType, Table, TableAnnotation},
@@ -83,9 +84,27 @@ impl CreateableObject for Table<'_, PostgresStatementProducer> {
     }
 }
 
+impl CreateableObject for Database<'_, PostgresStatementProducer> {
+    fn create(&self) -> String {
+        format!("DATABASE {};", self.name)
+    }
+}
+
 impl DropableObject for Table<'_, PostgresStatementProducer> {
     fn drop(&self) -> String {
         format!("TABLE {};", self.name)
+    }
+}
+
+impl DropableObject for Database<'_, PostgresStatementProducer> {
+    fn drop(&self) -> String {
+        format!("DATABASE {};", self.name)
+    }
+}
+
+impl Display for Database<'_, crate::db::producer::postgres::PostgresStatementProducer> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.create())
     }
 }
 

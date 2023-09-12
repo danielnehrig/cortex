@@ -1,10 +1,16 @@
+use crate::db::producer::DatabaseSpeicifics;
+
 #[derive(Debug, Clone)]
-pub struct Database {
-    pub name: String,
+pub struct Database<'a, T: DatabaseSpeicifics> {
+    pub name: &'a str,
+    _marker: std::marker::PhantomData<T>,
 }
 
-impl Database {
-    pub fn new(name: String) -> Self {
-        Self { name }
+impl<'a, T: DatabaseSpeicifics> Database<'a, T> {
+    pub fn new(name: &'a str) -> Self {
+        Self {
+            name,
+            _marker: std::marker::PhantomData,
+        }
     }
 }

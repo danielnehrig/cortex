@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use crate::db::producer::postgres::PostgresStatementProducer;
+    use crate::db::{objects::database::Database, producer::postgres::PostgresStatementProducer};
 
     #[test]
     fn create_table_1() {
@@ -23,5 +23,11 @@ mod test {
             format!("{table}"),
             "TABLE test (id INT PRIMARY KEY, name TEXT NOT NULL) PARTITION;"
         );
+    }
+
+    #[test]
+    fn create_db() {
+        let db = Database::<PostgresStatementProducer>::new("test");
+        assert_eq!(format!("{db}"), "DATABASE test;");
     }
 }
