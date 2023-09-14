@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 use crate::objects::step::Step;
 
 pub mod database;
@@ -14,8 +16,17 @@ impl<'a> PostgresStatementProducer<'a> {
         Default::default()
     }
 
-    pub fn add_step(&mut self, step: Step<'a, Self>) -> &mut Self {
+    pub fn add_step(mut self, step: Step<'a, Self>) -> Self {
         self.0.push(step);
         self
+    }
+}
+
+impl Display for PostgresStatementProducer<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        for step in &self.0 {
+            writeln!(f, "{}", step)?;
+        }
+        Ok(())
     }
 }

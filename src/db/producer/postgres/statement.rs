@@ -7,6 +7,8 @@ impl Display for Statement<'_, PostgresStatementProducer<'_>> {
         match self {
             Statement::Create(x) => write!(f, "CREATE {}", x.create()),
             Statement::Drop(x) => write!(f, "DROP {}", x.drop()),
+            Statement::Alter(x) => todo!(),
+            Statement::Insert(x) => todo!(),
             Statement::_Phantom(_) => panic!(),
         }
     }

@@ -6,6 +6,8 @@ use crate::db::producer::DatabaseSpeicifics;
 pub enum Statement<'a, T: DatabaseSpeicifics> {
     Create(&'a dyn CreateableObject),
     Drop(&'a dyn DropableObject),
+    Alter(&'a dyn AlterableOject),
+    Insert(&'a dyn Display),
     _Phantom(std::marker::PhantomData<T>),
 }
 
@@ -14,4 +16,8 @@ pub trait CreateableObject: Display {
 }
 pub trait DropableObject: Display {
     fn drop(&self) -> String;
+}
+
+pub trait AlterableOject: Display {
+    fn alter(&self) -> String;
 }

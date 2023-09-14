@@ -1,1 +1,1 @@
-mod postgres;
+mod table;

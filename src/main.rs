@@ -18,5 +18,5 @@ fn main() {
         .add_statement(Statement::Create(&orders))
         .add_statement(Statement::Drop(&users));
     let producer = PostgresStatementProducer::new().add_step(data.clone());
-    println!("{}", &data);
+    println!("{}", producer);
 }
