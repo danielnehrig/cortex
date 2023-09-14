@@ -9,11 +9,7 @@ use cortex::{
 };
 
 fn main() {
-    let users = Table::<PostgresStatementProducer>::new("users").add_prop(TableProp::new(
-        "id",
-        PropType::Int,
-        None,
-    ));
+    let users = Table::new("users").add_prop(TableProp::new("id", PropType::Int, None));
     let orders = Table::new("orders").add_prop(TableProp::new("id", PropType::Int, None));
     let db = Database::new("test");
     let data = Step::new("Init Schema", StepType::Update)
@@ -21,5 +17,6 @@ fn main() {
         .add_statement(Statement::Create(&users))
         .add_statement(Statement::Create(&orders))
         .add_statement(Statement::Drop(&users));
-    println!("{}", data);
+    let producer = PostgresStatementProducer::new().add_step(data.clone());
+    println!("{}", &data);
 }
