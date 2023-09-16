@@ -25,7 +25,7 @@ Add `cortex` to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-cortex = "0.1.0"
+cortex = { git = "https://github.com/danielnehrig/cortex" }
 ```
 
 ### Basic Usage
@@ -33,7 +33,7 @@ cortex = "0.1.0"
 Define and create a schema:
 
 ```rust
-use cortex::db::{
+use cortex::{
     objects::{
         statement::Statement,
         step::{Step, StepType},
