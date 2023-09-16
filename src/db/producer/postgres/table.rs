@@ -3,7 +3,7 @@ use std::fmt::Display;
 use crate::{
     db::producer::DatabaseSpeicifics,
     objects::{
-        statement::{CreateableObject, DropableObject},
+        statement::{CreateableObject, DropableObject, InsertableObject},
         table::{PropAnnotation, PropType, Table, TableAnnotation},
     },
     producer::PostgresStatementProducer,
@@ -41,6 +41,19 @@ impl CreateableObject for Table<'_, PostgresStatementProducer<'_>> {
             (false, true) => format!("TABLE {} ({});", self.name, props),
             (false, false) => format!("TABLE {} ({}) {};", self.name, props, annotations),
         }
+    }
+}
+
+impl InsertableObject for Table<'_, PostgresStatementProducer<'_>> {
+    fn insert(&self) -> String {
+        // let props = &self
+        // .props
+        // .iter()
+        // .map(|x| x.name.to_string())
+        // .collect::<Vec<String>>()
+        // .join(", ");
+        todo!();
+        // format!("INSERT INTO {} ({}) VALUES ({});", self.name, props, values)
     }
 }
 

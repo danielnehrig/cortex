@@ -14,6 +14,11 @@ pub enum Statement<'a, T: DatabaseSpeicifics> {
 pub trait CreateableObject: Display {
     fn create(&self) -> String;
 }
+
+pub trait InsertableObject: Display {
+    fn insert(&self) -> String;
+}
+
 pub trait DropableObject: Display {
     fn drop(&self) -> String;
 }
