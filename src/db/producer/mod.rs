@@ -1,9 +1,7 @@
 use crate::db::objects::table::{PropAnnotation, PropType, Table, TableAnnotation};
 
-//#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres")]
 pub mod postgres;
-#[cfg(feature = "sqlite")]
-pub mod sqlite;
 
 pub trait StatementProducer<T: DatabaseSpeicifics + Clone> {
     fn create_table(&self, table: &Table<T>) -> String;

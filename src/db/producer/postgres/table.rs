@@ -9,7 +9,7 @@ use crate::{
     producer::PostgresStatementProducer,
 };
 
-impl CreateableObject for Table<'_, PostgresStatementProducer<'_>> {
+impl CreateableObject for Table<PostgresStatementProducer<'_>> {
     fn create(&self) -> String {
         let props = &self
             .props
@@ -44,7 +44,7 @@ impl CreateableObject for Table<'_, PostgresStatementProducer<'_>> {
     }
 }
 
-impl InsertableObject for Table<'_, PostgresStatementProducer<'_>> {
+impl InsertableObject for Table<PostgresStatementProducer<'_>> {
     fn insert(&self) -> String {
         // let props = &self
         // .props
@@ -57,13 +57,13 @@ impl InsertableObject for Table<'_, PostgresStatementProducer<'_>> {
     }
 }
 
-impl DropableObject for Table<'_, PostgresStatementProducer<'_>> {
+impl DropableObject for Table<PostgresStatementProducer<'_>> {
     fn drop(&self) -> String {
         format!("TABLE {};", self.name)
     }
 }
 
-impl<'a> Display for Table<'a, PostgresStatementProducer<'_>> {
+impl Display for Table<PostgresStatementProducer<'_>> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.create())
     }

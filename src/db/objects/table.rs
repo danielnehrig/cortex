@@ -1,20 +1,22 @@
+use std::rc::Rc;
+
 use crate::db::producer::DatabaseSpeicifics;
 
 #[derive(Debug, Clone)]
 /// Table struxt for creating tables
-pub struct Table<'a, T: DatabaseSpeicifics> {
+pub struct Table<T: DatabaseSpeicifics> {
     /// name of the table
-    pub name: &'a str,
+    pub name: Rc<str>,
     /// properties of the table
-    pub props: Vec<TableProp<'a>>,
+    pub props: Vec<TableProp>,
     /// annotations of the table
     pub annotations: Vec<TableAnnotation>,
     _marker: std::marker::PhantomData<T>,
 }
 
 #[derive(Debug, Clone)]
-pub struct TableProp<'a> {
-    pub name: &'a str,
+pub struct TableProp {
+    pub name: Rc<str>,
     pub t_type: PropType,
     pub annotation: Option<PropAnnotation>,
 }
@@ -58,17 +60,17 @@ pub enum TableAnnotation {
     View,
 }
 
-impl<'a, T: DatabaseSpeicifics + Clone> Table<'a, T> {
-    pub fn new(name: &'a str) -> Self {
+impl<T: DatabaseSpeicifics + Clone> Table<T> {
+    pub fn new(name: &str) -> Self {
         Table {
-            name,
+            name: Rc::from(name),
             props: Vec::new(),
             annotations: Vec::new(),
             _marker: std::marker::PhantomData,
         }
     }
 
-    pub fn add_prop(&mut self, prop: TableProp<'a>) -> Self {
+    pub fn add_prop(&mut self, prop: TableProp) -> Self {
         self.props.push(prop);
         self.to_owned()
     }
@@ -79,10 +81,10 @@ impl<'a, T: DatabaseSpeicifics + Clone> Table<'a, T> {
     }
 }
 
-impl<'a> TableProp<'a> {
-    pub fn new(name: &'a str, t_type: PropType, annotation: Option<PropAnnotation>) -> Self {
+impl TableProp {
+    pub fn new(name: &str, t_type: PropType, annotation: Option<PropAnnotation>) -> Self {
         TableProp {
-            name,
+            name: Rc::from(name),
             t_type,
             annotation,
         }

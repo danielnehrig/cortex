@@ -4,11 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
+default = ["dep:postgres"]
 postgres = ["dep:postgres"]
 mongodb = ["dep:mongodb"]
+sqlite = ["dep:sqlite"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-postgres = { version = "0.19.0", optional = true }
-mongodb = { version = "2.0.0", optional = true }
+postgres = { version = "0.19", optional = true }
+mongodb = { version = "2.6", optional = true }
+sqlite = { version = "0.31", optional = true }
