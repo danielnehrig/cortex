@@ -13,24 +13,13 @@ impl CreateableObject for Table<PostgresStatementProducer<'_>> {
         let props = &self
             .props
             .iter()
-            .map(|x| {
-                let t = &x.serialize_prop_type();
-                match &x.annotation.clone() {
-                    Some(p) => {
-                        let a = &TableProp::serialize_prop_annotation(p.clone());
-                        format!("{} {} {}", x.name, t, a)
-                    }
-                    None => {
-                        format!("{} {}", x.name, t)
-                    }
-                }
-            })
+            .map(TableProp::compose)
             .collect::<Vec<String>>()
             .join(", ");
         let annotations = &self
             .annotations
             .iter()
-            .map(|x| Table::serialize_annotation(x.clone()))
+            .map(Table::serialize_annotation)
             .collect::<Vec<String>>()
             .join(" ");
 
@@ -69,7 +58,7 @@ impl Display for Table<PostgresStatementProducer<'_>> {
 }
 
 impl Table<PostgresStatementProducer<'_>> {
-    pub fn serialize_annotation(annotations: TableAnnotation) -> String {
+    pub fn serialize_annotation(annotations: &TableAnnotation) -> String {
         match annotations {
             TableAnnotation::Partition => "PARTITION".to_string(),
             TableAnnotation::View => "VIEW".to_string(),
@@ -78,7 +67,20 @@ impl Table<PostgresStatementProducer<'_>> {
 }
 
 impl TableProp<PostgresStatementProducer<'_>> {
-    pub fn serialize_prop_annotation(prop_annotation: PropAnnotation) -> String {
+    pub fn compose(&self) -> String {
+        let t = &self.serialize_prop_type();
+        match &self.annotation.clone() {
+            Some(p) => {
+                let a = &TableProp::serialize_prop_annotation(p.clone());
+                format!("{} {} {}", self.name, t, a)
+            }
+            None => {
+                format!("{} {}", self.name, t)
+            }
+        }
+    }
+
+    fn serialize_prop_annotation(prop_annotation: PropAnnotation) -> String {
         match prop_annotation {
             PropAnnotation::PrimaryKey => "PRIMARY KEY".to_string(),
             PropAnnotation::Unique => "UNIQUE".to_string(),
@@ -91,7 +93,7 @@ impl TableProp<PostgresStatementProducer<'_>> {
         }
     }
 
-    pub fn serialize_prop_type(&self) -> String {
+    fn serialize_prop_type(&self) -> String {
         match self.t_type {
             PropType::Int => "INT".to_string(),
             PropType::Double => "DOUBLE".to_string(),
