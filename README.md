@@ -39,7 +39,7 @@ use cortex::{
         step::{Step, StepType},
         table::{PropType, Table, TableProp},
     },
-    producer::postgres::PostgresStatementProducer,
+    producer::PostgresStatementProducer,
 };
 
 fn main() {

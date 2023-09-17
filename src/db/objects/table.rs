@@ -1,31 +1,23 @@
 use std::rc::Rc;
 
-use crate::db::producer::DatabaseSpeicifics;
-
 #[derive(Debug, Clone)]
 /// Table struxt for creating tables
-pub struct Table<T: DatabaseSpeicifics> {
+pub struct Table<T> {
     /// name of the table
     pub name: Rc<str>,
     /// properties of the table
-    pub props: Vec<TableProp>,
+    pub props: Vec<TableProp<T>>,
     /// annotations of the table
     pub annotations: Vec<TableAnnotation>,
     _marker: std::marker::PhantomData<T>,
 }
 
 #[derive(Debug, Clone)]
-pub struct TableProp {
+pub struct TableProp<T> {
     pub name: Rc<str>,
     pub t_type: PropType,
     pub annotation: Option<PropAnnotation>,
-}
-
-#[derive(Debug, Clone)]
-pub enum TableType {
-    Table,
-    View,
-    MaterializedView,
+    _marker: std::marker::PhantomData<T>,
 }
 
 #[derive(Debug, Clone)]
@@ -60,7 +52,7 @@ pub enum TableAnnotation {
     View,
 }
 
-impl<T: DatabaseSpeicifics + Clone> Table<T> {
+impl<T> Table<T> {
     pub fn new(name: &str) -> Self {
         Table {
             name: Rc::from(name),
@@ -70,23 +62,24 @@ impl<T: DatabaseSpeicifics + Clone> Table<T> {
         }
     }
 
-    pub fn add_prop(&mut self, prop: TableProp) -> Self {
+    pub fn add_prop(mut self, prop: TableProp<T>) -> Self {
         self.props.push(prop);
-        self.to_owned()
+        self
     }
 
-    pub fn add_annotation(&mut self, annotation: TableAnnotation) -> Self {
+    pub fn add_annotation(mut self, annotation: TableAnnotation) -> Self {
         self.annotations.push(annotation);
-        self.to_owned()
+        self
     }
 }
 
-impl TableProp {
+impl<T> TableProp<T> {
     pub fn new(name: &str, t_type: PropType, annotation: Option<PropAnnotation>) -> Self {
         TableProp {
             name: Rc::from(name),
             t_type,
             annotation,
+            _marker: std::marker::PhantomData,
         }
     }
 }

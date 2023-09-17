@@ -1,9 +1,9 @@
 use std::rc::Rc;
 
-use crate::db::{objects::statement::Statement, producer::DatabaseSpeicifics};
+use crate::db::objects::statement::Statement;
 
 #[derive(Clone)]
-pub struct Step<'a, T: DatabaseSpeicifics> {
+pub struct Step<'a, T> {
     pub name: Rc<str>,
     pub s_type: StepType,
     pub statements: Vec<Statement<'a, T>>,
@@ -14,7 +14,7 @@ pub enum StepType {
     Update,
 }
 
-impl<'a, T: DatabaseSpeicifics> Step<'a, T> {
+impl<'a, T> Step<'a, T> {
     pub fn new(name: &'a str, s_type: StepType) -> Self {
         Self {
             name: Rc::from(name),

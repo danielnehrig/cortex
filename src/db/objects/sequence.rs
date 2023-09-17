@@ -1,7 +1,5 @@
-use crate::db::producer::DatabaseSpeicifics;
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Sequence<'a, T: DatabaseSpeicifics> {
+pub struct Sequence<'a, T> {
     pub name: &'a str,
     pub start: i64,
     pub increment: i64,
@@ -11,7 +9,7 @@ pub struct Sequence<'a, T: DatabaseSpeicifics> {
     _marker: std::marker::PhantomData<T>,
 }
 
-impl<'a, T: DatabaseSpeicifics> Sequence<'a, T> {
+impl<'a, T> Sequence<'a, T> {
     pub fn new(name: &'a str) -> Self {
         Self {
             name,

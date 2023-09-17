@@ -1,10 +1,9 @@
 use std::fmt::Display;
 
 use crate::{
-    db::producer::DatabaseSpeicifics,
     objects::{
         statement::{CreateableObject, DropableObject, InsertableObject},
-        table::{PropAnnotation, PropType, Table, TableAnnotation},
+        table::{PropAnnotation, PropType, Table, TableAnnotation, TableProp},
     },
     producer::PostgresStatementProducer,
 };
@@ -15,10 +14,10 @@ impl CreateableObject for Table<PostgresStatementProducer<'_>> {
             .props
             .iter()
             .map(|x| {
-                let t = PostgresStatementProducer::serialize_prop_type(&x.t_type);
+                let t = &x.serialize_prop_type();
                 match &x.annotation.clone() {
                     Some(p) => {
-                        let a = PostgresStatementProducer::serialize_prop_annotation(p);
+                        let a = &TableProp::serialize_prop_annotation(p.clone());
                         format!("{} {} {}", x.name, t, a)
                     }
                     None => {
@@ -31,7 +30,7 @@ impl CreateableObject for Table<PostgresStatementProducer<'_>> {
         let annotations = &self
             .annotations
             .iter()
-            .map(PostgresStatementProducer::serialize_table_annotation)
+            .map(|x| Table::serialize_annotation(x.clone()))
             .collect::<Vec<String>>()
             .join(" ");
 
@@ -69,40 +68,39 @@ impl Display for Table<PostgresStatementProducer<'_>> {
     }
 }
 
-impl DatabaseSpeicifics for PostgresStatementProducer<'_> {
-    fn serialize_prop_type(t: &PropType) -> String {
-        match t {
-            PropType::Int => "INT",
-            PropType::Double => "DOUBLE",
-            PropType::Text => "TEXT",
-            PropType::Bool => "BOOL",
-            PropType::Date => "DATE",
-            PropType::Timestamp => "TIMESTAMP",
-            PropType::Bigint => "BIGINT",
-            PropType::Smallint => "SMALLINT",
-        }
-        .to_string()
-    }
-
-    fn serialize_prop_annotation(t: &PropAnnotation) -> String {
-        match t {
-            PropAnnotation::PrimaryKey => "PRIMARY KEY".to_string(),
-            PropAnnotation::Unique => todo!(),
-            PropAnnotation::NotNull => "NOT NULL".to_string(),
-            PropAnnotation::Default => todo!(),
-            PropAnnotation::Check => todo!(),
-            PropAnnotation::Foreign => todo!(),
-            PropAnnotation::Empty => "".to_string(),
-            PropAnnotation::Constraint(_) => todo!(),
-        }
-    }
-
-    fn serialize_table_annotation(t: &TableAnnotation) -> String {
-        match t {
+impl Table<PostgresStatementProducer<'_>> {
+    pub fn serialize_annotation(annotations: TableAnnotation) -> String {
+        match annotations {
             TableAnnotation::Partition => "PARTITION".to_string(),
-            TableAnnotation::View => {
-                todo!()
-            }
+            TableAnnotation::View => "VIEW".to_string(),
+        }
+    }
+}
+
+impl TableProp<PostgresStatementProducer<'_>> {
+    pub fn serialize_prop_annotation(prop_annotation: PropAnnotation) -> String {
+        match prop_annotation {
+            PropAnnotation::PrimaryKey => "PRIMARY KEY".to_string(),
+            PropAnnotation::Unique => "UNIQUE".to_string(),
+            PropAnnotation::NotNull => "NOT NULL".to_string(),
+            PropAnnotation::Default => "DEFAULT".to_string(),
+            PropAnnotation::Check => "CHECK".to_string(),
+            PropAnnotation::Foreign => "FOREIGN".to_string(),
+            PropAnnotation::Constraint(_) => "CONSTRAINT".to_string(),
+            PropAnnotation::Empty => "".to_string(),
+        }
+    }
+
+    pub fn serialize_prop_type(&self) -> String {
+        match self.t_type {
+            PropType::Int => "INT".to_string(),
+            PropType::Double => "DOUBLE".to_string(),
+            PropType::Text => "TEXT".to_string(),
+            PropType::Bool => "BOOL".to_string(),
+            PropType::Date => "DATE".to_string(),
+            PropType::Timestamp => "TIMESTAMP".to_string(),
+            PropType::Bigint => "BIGINT".to_string(),
+            PropType::Smallint => "SMALLINT".to_string(),
         }
     }
 }

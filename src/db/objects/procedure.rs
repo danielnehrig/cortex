@@ -1,7 +1,5 @@
-use crate::db::producer::DatabaseSpeicifics;
-
 #[derive(Debug, Clone)]
-pub struct StoredProcedure<'a, T: DatabaseSpeicifics> {
+pub struct StoredProcedure<'a, T> {
     pub name: &'a str,
     pub params: Vec<Parameter>,
     pub returns: Vec<Parameter>,
@@ -15,7 +13,7 @@ pub struct Parameter {
     pub data_type: String,
 }
 
-impl<'a, T: DatabaseSpeicifics> StoredProcedure<'a, T> {
+impl<'a, T> StoredProcedure<'a, T> {
     pub fn new(name: &'a str) -> Self {
         Self {
             name,

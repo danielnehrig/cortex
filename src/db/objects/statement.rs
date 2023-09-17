@@ -1,9 +1,7 @@
 use std::fmt::Display;
 
-use crate::db::producer::DatabaseSpeicifics;
-
 #[derive(Clone)]
-pub enum Statement<'a, T: DatabaseSpeicifics> {
+pub enum Statement<'a, T> {
     Create(&'a dyn CreateableObject),
     Drop(&'a dyn DropableObject),
     Alter(&'a dyn AlterableOject),
