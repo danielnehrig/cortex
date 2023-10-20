@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 #[doc(alias = "Collection")]
 #[derive(Debug, Clone)]
-/// Table struxt for creating tables
+/// Table struct for creating tables
 pub struct Table<T> {
     /// name of the table
     pub name: Rc<str>,
@@ -14,6 +14,7 @@ pub struct Table<T> {
 }
 
 #[derive(Debug, Clone)]
+/// TableProp struct for creating properties of a table
 pub struct TableProp<T> {
     pub name: Rc<str>,
     pub t_type: PropType,
@@ -22,6 +23,7 @@ pub struct TableProp<T> {
 }
 
 #[derive(Debug, Clone)]
+/// PropType enum for defining the type of a property
 pub enum PropType {
     Int,
     Double,
@@ -35,6 +37,7 @@ pub enum PropType {
 }
 
 #[derive(Debug, Clone, Default)]
+/// PropAnnotation enum for defining the annotation of a property
 pub enum PropAnnotation {
     PrimaryKey,
     Unique,
@@ -47,13 +50,22 @@ pub enum PropAnnotation {
     Empty,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
+/// TableAnnotation enum for defining the annotation of a table
 pub enum TableAnnotation {
     Partition,
     View,
 }
 
 impl<T> Table<T> {
+    /// Create a new table
+    /// # Example
+    /// ```
+    /// use cortex::producer::PostgresStatementProducer;
+    /// use cortex::objects::table::{Table};
+    /// let table: Table<PostgresStatementProducer> = Table::new("table");
+    /// assert_eq!(table.name, "table".into());
+    /// ```
     pub fn new(name: &str) -> Self {
         Table {
             name: Rc::from(name),
@@ -64,6 +76,19 @@ impl<T> Table<T> {
     }
 
     /// Add a property to the table
+    /// # Example
+    /// ```
+    /// use cortex::producer::PostgresStatementProducer;
+    /// use cortex::objects::table::{Table, TableProp, PropType};
+    /// let table: Table<PostgresStatementProducer> = Table::new("table")
+    ///    .add_prop(TableProp::new("id", PropType::Int, None))
+    ///    .add_prop(TableProp::new("name", PropType::Text, None))
+    ///    .add_prop(TableProp::new("age", PropType::Int, None));
+    ///  assert_eq!(table.props.len(), 3);
+    ///  assert_eq!(table.props[0].name, "id".into());
+    ///  assert_eq!(table.props[1].name, "name".into());
+    ///  assert_eq!(table.props[2].name, "age".into());
+    /// ```
     pub fn add_prop(mut self, prop: TableProp<T>) -> Self {
         self.props.push(prop);
         self
@@ -96,6 +121,23 @@ impl<T> Table<T> {
         self
     }
 
+    /// Add an annotation to the table
+    /// # Example
+    /// ```
+    /// use cortex::producer::PostgresStatementProducer;
+    /// use cortex::objects::table::{Table, TableProp, PropType, TableAnnotation};
+    /// let table: Table<PostgresStatementProducer> = Table::new("table")
+    ///    .add_prop(TableProp::new("id", PropType::Int, None))
+    ///    .add_prop(TableProp::new("name", PropType::Text, None))
+    ///    .add_prop(TableProp::new("age", PropType::Int, None))
+    ///    .add_annotation(TableAnnotation::Partition);
+    ///  assert_eq!(table.props.len(), 3);
+    ///  assert_eq!(table.props[0].name, "id".into());
+    ///  assert_eq!(table.props[1].name, "name".into());
+    ///  assert_eq!(table.props[2].name, "age".into());
+    ///  assert_eq!(table.annotations.len(), 1);
+    ///  assert_eq!(table.annotations[0], TableAnnotation::Partition);
+    /// ```
     pub fn add_annotation(mut self, annotation: TableAnnotation) -> Self {
         self.annotations.push(annotation);
         self
@@ -103,6 +145,14 @@ impl<T> Table<T> {
 }
 
 impl<T> TableProp<T> {
+    /// Create a new property
+    /// # Example
+    /// ```
+    /// use cortex::producer::PostgresStatementProducer;
+    /// use cortex::objects::table::{TableProp, PropType};
+    /// let prop: TableProp<PostgresStatementProducer> = TableProp::new("id", PropType::Int, None);
+    /// assert_eq!(prop.name, "id".into());
+    /// ```
     pub fn new(name: &str, t_type: PropType, annotation: Option<PropAnnotation>) -> Self {
         TableProp {
             name: Rc::from(name),
