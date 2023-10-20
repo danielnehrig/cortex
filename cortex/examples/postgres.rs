@@ -1,4 +1,5 @@
 use cortex::{
+    connection::{postgres::Postgres, ConnectionConfig},
     objects::{
         database::Database,
         statement::Statement,
@@ -9,6 +10,7 @@ use cortex::{
 };
 
 fn main() {
+    // don't need to import table prop also can pass slice of tuples with table infos
     let users = Table::new("users").add_prop(TableProp::new("id", PropType::Int, None));
     let orders = Table::new("orders").add_prop(TableProp::new("id", PropType::Int, None));
     let db = Database::new("test");
@@ -17,6 +19,7 @@ fn main() {
         .add_statement(Statement::Create(&users))
         .add_statement(Statement::Create(&orders))
         .add_statement(Statement::Drop(&users));
-    let producer = PostgresStatementProducer::new().add_step(data.clone());
+    let client_conf = ConnectionConfig::default();
+    let producer = PostgresStatementProducer::new().add_step(data);
     println!("{}", producer);
 }

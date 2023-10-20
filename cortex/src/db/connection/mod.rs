@@ -7,9 +7,9 @@ pub mod sqlite;
 
 #[derive(Debug)]
 pub struct ConnectionConfig<'a> {
-    pub host: &'a str,
-    pub port: u16,
-    pub username: &'a str,
-    pub password: &'a str,
-    pub database: &'a str,
+    host: &'a str,
+    port: u16,
+    username: &'a str,
+    password: &'a str,
+    database: &'a str,
 }

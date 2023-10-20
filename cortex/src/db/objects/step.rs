@@ -2,7 +2,6 @@ use std::rc::Rc;
 
 use crate::db::objects::statement::Statement;
 
-#[derive(Clone)]
 pub struct Step<'a, T> {
     pub name: Rc<str>,
     pub s_type: StepType,

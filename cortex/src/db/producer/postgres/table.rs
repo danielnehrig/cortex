@@ -71,7 +71,7 @@ impl TableProp<PostgresStatementProducer<'_>> {
         let t = &self.serialize_prop_type();
         match &self.annotation.clone() {
             Some(p) => {
-                let a = &TableProp::serialize_prop_annotation(p.clone());
+                let a = TableProp::serialize_prop_annotation(p.clone());
                 format!("{} {} {}", self.name, t, a)
             }
             None => {

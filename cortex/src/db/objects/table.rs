@@ -1,5 +1,7 @@
 use std::rc::Rc;
 
+use crate::objects::statement::Statement;
+
 #[derive(Debug, Clone)]
 /// Table struxt for creating tables
 pub struct Table<T> {
@@ -64,6 +66,17 @@ impl<T> Table<T> {
 
     pub fn add_prop(mut self, prop: TableProp<T>) -> Self {
         self.props.push(prop);
+        self
+    }
+
+    pub fn add_props_as_slice(
+        mut self,
+        props: &[(&str, PropType, Option<PropAnnotation>)],
+    ) -> Self {
+        for (name, t_type, annotation) in props {
+            self.props
+                .push(TableProp::new(name, t_type.clone(), annotation.clone()));
+        }
         self
     }
 
