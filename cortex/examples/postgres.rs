@@ -11,15 +11,17 @@ use cortex::{
 
 fn main() {
     // don't need to import table prop also can pass slice of tuples with table infos
-    let users = Table::new("users").add_prop(TableProp::new("id", PropType::Int, None));
-    let orders = Table::new("orders").add_prop(TableProp::new("id", PropType::Int, None));
-    let db = Database::new("test");
+    let users: Table<PostgresStatementProducer> =
+        Table::new("users").add_prop(TableProp::new("id", PropType::Int, None));
+    let orders: Table<PostgresStatementProducer> =
+        Table::new("orders").add_prop(TableProp::new("id", PropType::Int, None));
+    let db: Database<PostgresStatementProducer> = Database::new("test");
     let data = Step::new("Init Schema", StepType::Update)
         .add_statement(Statement::Create(&db))
         .add_statement(Statement::Create(&users))
         .add_statement(Statement::Create(&orders))
         .add_statement(Statement::Drop(&users));
-    let client_conf = ConnectionConfig::default();
+    let _client_conf = ConnectionConfig::<Postgres>::default();
     let producer = PostgresStatementProducer::new().add_step(data);
     println!("{}", producer);
 }

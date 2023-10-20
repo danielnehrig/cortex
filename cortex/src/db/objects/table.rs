@@ -63,11 +63,28 @@ impl<T> Table<T> {
         }
     }
 
+    /// Add a property to the table
     pub fn add_prop(mut self, prop: TableProp<T>) -> Self {
         self.props.push(prop);
         self
     }
 
+    /// Add a properties to the table
+    /// # Example
+    /// ```
+    /// use cortex::producer::PostgresStatementProducer;
+    /// use cortex::objects::table::{Table, TableProp, PropType};
+    /// let table: Table<PostgresStatementProducer> = Table::new("table")
+    ///    .add_props_as_slice(&[
+    ///    ("id", PropType::Int, None),
+    ///    ("name", PropType::Text, None),
+    ///    ("age", PropType::Int, None),
+    ///    ]);
+    ///  assert_eq!(table.props.len(), 3);
+    ///  assert_eq!(table.props[0].name, "id".into());
+    ///  assert_eq!(table.props[1].name, "name".into());
+    ///  assert_eq!(table.props[2].name, "age".into());
+    /// ```
     pub fn add_props_as_slice(
         mut self,
         props: &[(&str, PropType, Option<PropAnnotation>)],

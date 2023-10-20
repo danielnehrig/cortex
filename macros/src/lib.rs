@@ -1,6 +1,6 @@
 use quote::quote;
 #[proc_macro_derive(Create)]
-pub fn Create(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub fn create(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let ast = syn::parse(input).unwrap();
     impl_table_macro(&ast)
 }

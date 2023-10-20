@@ -1,4 +1,4 @@
-#[cfg(all(feature = "mongodb"))]
+#[cfg(feature = "mongodb")]
 #[cfg_attr(doc_cfg, doc(cfg(all(feature = "mongodb"))))]
 pub mod mongodb;
 #[cfg(feature = "postgres")]

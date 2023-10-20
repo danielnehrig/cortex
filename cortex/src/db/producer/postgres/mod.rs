@@ -1,7 +1,5 @@
 use std::fmt::{Display, Formatter};
 
-use postgres::Client;
-
 use crate::objects::step::Step;
 
 mod database;
@@ -22,6 +20,12 @@ impl<'a> PostgresStatementProducer<'a> {
     pub fn add_step(mut self, step: Step<'a, Self>) -> Self {
         self.data.push(step);
         self
+    }
+}
+
+impl<'a> Default for PostgresStatementProducer<'a> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

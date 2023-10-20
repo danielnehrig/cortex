@@ -22,6 +22,12 @@ impl<'a> MongodbStatementProducer<'a> {
     }
 }
 
+impl<'a> Default for MongodbStatementProducer<'a> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Display for MongodbStatementProducer<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         for step in &self.data {

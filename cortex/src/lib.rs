@@ -23,7 +23,6 @@
 //!     producer::PostgresStatementProducer,
 //! };
 //!
-//! fn main() {
 //!     // don't need to import table prop also can pass slice of tuples with table infos
 //!     let users = Table::new("users").add_prop(TableProp::new("id", PropType::Int, None));
 //!     let orders = Table::new("orders").add_prop(TableProp::new("id", PropType::Int, None));
@@ -36,7 +35,6 @@
 //!     let client_conf = ConnectionConfig::default();
 //!     let producer = PostgresStatementProducer::new().add_step(data);
 //!     println!("{}", producer);
-//! }
 //! ```
 //! to see more examples take a look into the examples folder
 //!
