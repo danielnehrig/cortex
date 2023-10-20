@@ -9,6 +9,7 @@ use cortex::{
     producer::PostgresStatementProducer,
 };
 
+#[cfg(feature = "postgres")]
 fn main() {
     // don't need to import table prop also can pass slice of tuples with table infos
     let users: Table<PostgresStatementProducer> =

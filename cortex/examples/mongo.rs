@@ -8,6 +8,7 @@ use cortex::{
     producer::MongodbStatementProducer,
 };
 
+#[cfg(feature = "mongodb")]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let users: Table<MongodbStatementProducer> =
