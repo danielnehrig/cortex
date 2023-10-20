@@ -2,7 +2,7 @@ use postgres::Client;
 
 use crate::db::connection::ConnectionConfig;
 
-impl ConnectionConfig<'_> {
+impl ConnectionConfig<'_, Postgres> {
     pub fn get_uri(&self) -> String {
         format!(
             "postgresql://{}:{}@{}:{}/{}",
@@ -11,14 +11,15 @@ impl ConnectionConfig<'_> {
     }
 }
 
-impl Default for ConnectionConfig<'_> {
+impl Default for ConnectionConfig<'_, Postgres> {
     fn default() -> Self {
-        Self {
+        ConnectionConfig {
             host: "localhost",
             port: 5432,
             database: "postgres",
             username: "postgres",
             password: "postgres",
+            marker: std::marker::PhantomData,
         }
     }
 }
@@ -26,7 +27,7 @@ impl Default for ConnectionConfig<'_> {
 pub struct Postgres(Client);
 
 impl Postgres {
-    pub fn new(config: ConnectionConfig<'_>) -> Result<Self, postgres::Error> {
+    pub fn new(config: ConnectionConfig<'_, Self>) -> Result<Self, postgres::Error> {
         let uri = config.get_uri();
 
         let client = Client::connect(&uri, postgres::NoTls)?;

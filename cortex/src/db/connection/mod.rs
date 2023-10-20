@@ -6,10 +6,11 @@ pub mod postgres;
 pub mod sqlite;
 
 #[derive(Debug)]
-pub struct ConnectionConfig<'a> {
+pub struct ConnectionConfig<'a, T> {
     host: &'a str,
     port: u16,
     username: &'a str,
     password: &'a str,
     database: &'a str,
+    marker: std::marker::PhantomData<T>,
 }

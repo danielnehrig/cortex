@@ -4,10 +4,10 @@ use postgres::Client;
 
 use crate::objects::step::Step;
 
-pub mod database;
-pub mod statement;
-pub mod step;
-pub mod table;
+mod database;
+mod statement;
+mod step;
+mod table;
 mod tests;
 
 pub struct PostgresStatementProducer<'a> {

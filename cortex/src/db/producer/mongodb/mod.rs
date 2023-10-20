@@ -1,15 +1,11 @@
-// use std::fmt::{Display, Formatter};
-
 use std::fmt::{Display, Formatter};
-
-use mongodb::{bson::doc, Client};
 
 use crate::objects::step::Step;
 
-pub mod database;
-pub mod statement;
-pub mod step;
-pub mod table;
+mod database;
+mod statement;
+mod step;
+mod table;
 
 pub struct MongodbStatementProducer<'a> {
     data: Vec<Step<'a, Self>>,

@@ -5,7 +5,7 @@ use mongodb::{
 
 use crate::db::connection::ConnectionConfig;
 
-impl ConnectionConfig<'_> {
+impl ConnectionConfig<'_, Mongo> {
     pub fn get_uri(&self) -> String {
         format!(
             "mongodb://{}:{}@{}:{}/{}",
@@ -14,14 +14,15 @@ impl ConnectionConfig<'_> {
     }
 }
 
-impl Default for ConnectionConfig<'_> {
+impl Default for ConnectionConfig<'_, Mongo> {
     fn default() -> Self {
-        Self {
+        ConnectionConfig {
             username: "root",
             password: "example",
             host: "localhost",
             port: 27017,
             database: "test",
+            marker: std::marker::PhantomData,
         }
     }
 }
@@ -30,7 +31,7 @@ pub struct Mongo(Client);
 
 impl Mongo {
     #[cfg(feature = "async")]
-    pub async fn new(config: ConnectionConfig<'_>) -> mongodb::error::Result<Self> {
+    pub async fn new(config: ConnectionConfig<'_, Mongo>) -> mongodb::error::Result<Self> {
         // Replace the placeholder with your Atlas connection string
         let uri = config.get_uri();
         let mut client_options = ClientOptions::parse(uri).await?;

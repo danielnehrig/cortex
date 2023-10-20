@@ -1,7 +1,6 @@
 use std::rc::Rc;
 
-use crate::objects::statement::Statement;
-
+#[doc(alias = "Collection")]
 #[derive(Debug, Clone)]
 /// Table struxt for creating tables
 pub struct Table<T> {
