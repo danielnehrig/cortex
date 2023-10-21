@@ -1,0 +1,21 @@
+[package]
+name = "cortex"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["all"]
+postgres = ["dep:postgres"]
+mongodb = ["dep:mongodb"]
+sqlite = ["dep:sqlite"]
+async = ["dep:tokio"]
+all = ["postgres","sqlite","mongodb","async"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+macros = { path = "../macros" }
+postgres = { version = "0.19", optional = true }
+mongodb = { version = "2.6", optional = true }
+sqlite = { version = "0.31", optional = true }
+tokio = { version = "1.33", optional = true }

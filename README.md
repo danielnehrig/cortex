@@ -1,4 +1,4 @@
-# cortex 🧠🗄️
+# cortex (WORK IN PROGRESS not useable yet) 🧠🗄️
 
 Easily create database schemas with a unified API for any supported database. Introducing `cortex`, a Rust library designed to simplify and unify database schema creation across multiple database platforms.
 
@@ -25,7 +25,7 @@ Add `cortex` to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-cortex = "0.1.0"
+cortex = { git = "https://github.com/danielnehrig/cortex" }
 ```
 
 ### Basic Usage
@@ -33,13 +33,13 @@ cortex = "0.1.0"
 Define and create a schema:
 
 ```rust
-use cortex::db::{
+use cortex::{
     objects::{
         statement::Statement,
         step::{Step, StepType},
         table::{PropType, Table, TableProp},
     },
-    producer::postgres::PostgresStatementProducer,
+    producer::PostgresStatementProducer,
 };
 
 fn main() {

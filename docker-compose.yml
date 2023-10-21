@@ -1,0 +1,15 @@
+# docker pull timescale/timescaledb-ha:pg15-oss
+services:
+  pg:
+    image: timescale/timescaledb-ha:pg15-oss
+    environment:
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+  mongo:
+    image: mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    ports:
+      - "27017:27017"
