@@ -13,13 +13,13 @@ impl CreateableObject for Table<PostgresStatementProducer<'_>> {
         let props = &self
             .props
             .iter()
-            .map(TableProp::<PostgresStatementProducer>::compose)
+            .map(|e| e.compose())
             .collect::<Vec<String>>()
             .join(", ");
         let annotations = &self
             .annotations
             .iter()
-            .map(Table::<PostgresStatementProducer>::serialize_annotation)
+            .map(Self::serialize_annotation)
             .collect::<Vec<String>>()
             .join(" ");
 

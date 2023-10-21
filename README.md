@@ -1,4 +1,4 @@
-# cortex 🧠🗄️
+# cortex (WORK IN PROGRESS not useable yet) 🧠🗄️
 
 Easily create database schemas with a unified API for any supported database. Introducing `cortex`, a Rust library designed to simplify and unify database schema creation across multiple database platforms.
 

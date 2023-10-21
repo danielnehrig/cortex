@@ -9,7 +9,7 @@
 //!
 //! ## Example
 //! ```toml
-//! cortex = { version = "0.1.0", features = ["postgres"] }
+//! cortex = { git = "https://github.com/danielnehrig/cortex", features = ["postgres"] }
 //! ```
 //! ```rust
 //! use cortex::{
