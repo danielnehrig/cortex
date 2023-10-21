@@ -1,10 +1,10 @@
 on: [push]
 
-name: cov
+name: coverage
 
 jobs:
   check:
-    name: Rust project
+    name: Run Tarpulin and uploaad to codecov
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
