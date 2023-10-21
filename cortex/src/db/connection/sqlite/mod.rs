@@ -6,6 +6,20 @@ impl ConnectionConfig<'_, SQLite> {
     }
 }
 
+impl Default for ConnectionConfig<'_, SQLite> {
+    fn default() -> Self {
+        ConnectionConfig {
+            username: "",
+            password: "",
+            host: "",
+            port: 0,
+            database: "",
+            marker: std::marker::PhantomData,
+            path: Some("test.db"),
+        }
+    }
+}
+
 pub struct SQLite(sqlite::Connection);
 
 impl SQLite {
