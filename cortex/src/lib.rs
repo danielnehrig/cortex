@@ -65,6 +65,8 @@ pub mod producer {
     pub use crate::db::producer::mongodb::*;
     #[cfg(feature = "postgres")]
     pub use crate::db::producer::postgres::*;
+    #[cfg(feature = "sqlite")]
+    pub use crate::db::producer::sqlite::*;
 }
 
 pub mod connection {
