@@ -5,12 +5,13 @@ pub mod postgres;
 #[cfg(feature = "sqlite")]
 pub mod sqlite;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ConnectionConfig<'a, T> {
     host: &'a str,
     port: u16,
     username: &'a str,
     password: &'a str,
     database: &'a str,
+    path: Option<&'a str>,
     marker: std::marker::PhantomData<T>,
 }

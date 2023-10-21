@@ -23,6 +23,7 @@ impl Default for ConnectionConfig<'_, Mongo> {
             port: 27017,
             database: "test",
             marker: std::marker::PhantomData,
+            path: None,
         }
     }
 }

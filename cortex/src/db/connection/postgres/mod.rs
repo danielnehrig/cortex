@@ -19,6 +19,7 @@ impl Default for ConnectionConfig<'_, Postgres> {
             database: "postgres",
             username: "postgres",
             password: "postgres",
+            path: None,
             marker: std::marker::PhantomData,
         }
     }
