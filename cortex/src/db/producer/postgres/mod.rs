@@ -1,6 +1,9 @@
 use std::fmt::{Display, Formatter};
 
-use crate::objects::step::Step;
+use crate::{
+    connection::{postgres::Postgres, ExecuteError, ExecuteType},
+    objects::step::Step,
+};
 
 mod database;
 mod statement;
@@ -10,22 +13,35 @@ mod tests;
 
 pub struct PostgresStatementProducer<'a> {
     data: Vec<Step<'a, Self>>,
+    connection: Postgres,
 }
 
 impl<'a> PostgresStatementProducer<'a> {
-    pub fn new() -> Self {
-        Self { data: Vec::new() }
+    pub fn new(connection: Postgres) -> Self {
+        Self {
+            data: Vec::new(),
+            connection,
+        }
     }
 
     pub fn add_step(mut self, step: Step<'a, Self>) -> Self {
         self.data.push(step);
         self
     }
-}
 
-impl<'a> Default for PostgresStatementProducer<'a> {
-    fn default() -> Self {
-        Self::new()
+    pub fn clean(mut self) -> Self {
+        self.data.clear();
+        self
+    }
+
+    pub fn execute(mut self) -> Result<Self, ExecuteError> {
+        for step in &self.data {
+            for statement in &step.statements {
+                self.connection
+                    .execute(ExecuteType::Command(statement.to_string()))?;
+            }
+        }
+        Ok(self)
     }
 }
 

@@ -3,7 +3,12 @@ use mongodb::{
     Client,
 };
 
-use crate::db::connection::ConnectionConfig;
+use crate::{
+    connection::{ExecuteError, ExecuteType},
+    db::connection::ConnectionConfig,
+    objects::statement::Statement,
+    producer::MongodbStatementProducer,
+};
 
 impl ConnectionConfig<'_, Mongo> {
     pub fn get_uri(&self) -> String {
@@ -29,6 +34,25 @@ impl Default for ConnectionConfig<'_, Mongo> {
 }
 
 pub struct Mongo(Client);
+
+impl Mongo {
+    pub fn execute(
+        &mut self,
+        data: ExecuteType<'_, MongodbStatementProducer>,
+    ) -> Result<(), ExecuteError> {
+        match data {
+            ExecuteType::Command(command) => panic!("mongodb does not work like sql"),
+            ExecuteType::Driver(statement) => match statement {
+                Statement::Create(_) => todo!(),
+                Statement::Drop(_) => todo!(),
+                Statement::Alter(_) => todo!(),
+                Statement::Insert(_) => todo!(),
+                Statement::_Phantom(_) => todo!(),
+            },
+        }
+        Ok(())
+    }
+}
 
 impl Mongo {
     #[cfg(feature = "async")]

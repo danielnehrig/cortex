@@ -1,6 +1,9 @@
 use postgres::Client;
 
-use crate::db::connection::ConnectionConfig;
+use crate::{
+    connection::ExecuteType,
+    db::connection::{ConnectionConfig, ExecuteError},
+};
 
 impl ConnectionConfig<'_, Postgres> {
     pub fn get_uri(&self) -> String {
@@ -18,7 +21,7 @@ impl Default for ConnectionConfig<'_, Postgres> {
             port: 5432,
             database: "postgres",
             username: "postgres",
-            password: "postgres",
+            password: "password",
             path: None,
             marker: std::marker::PhantomData,
         }
@@ -38,5 +41,18 @@ impl Postgres {
 
     pub fn get_client(&mut self) -> &mut Client {
         &mut self.0
+    }
+}
+
+impl Postgres {
+    pub fn execute(&mut self, data: ExecuteType<'_, Self>) -> Result<(), ExecuteError> {
+        match data {
+            ExecuteType::Command(command) => self
+                .0
+                .batch_execute(command.as_str())
+                .map_err(|e| ExecuteError(e.to_string()))?,
+            ExecuteType::Driver(_) => panic!("c driver based execution not supported"),
+        }
+        Ok(())
     }
 }

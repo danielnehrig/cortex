@@ -89,8 +89,8 @@ impl<T> Table<T> {
     ///  assert_eq!(table.props[1].name, "name".into());
     ///  assert_eq!(table.props[2].name, "age".into());
     /// ```
-    pub fn add_prop(mut self, prop: TableProp<T>) -> Self {
-        self.props.push(prop);
+    pub fn add_prop(mut self, prop: (&str, PropType, Option<PropAnnotation>)) -> Self {
+        self.props.push(TableProp::<T>::new(prop.0, prop.1, prop.2));
         self
     }
 
