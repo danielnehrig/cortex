@@ -41,7 +41,7 @@ impl Mongo {
         data: ExecuteType<'_, MongodbStatementProducer>,
     ) -> Result<(), ExecuteError> {
         match data {
-            ExecuteType::Command(command) => panic!("mongodb does not work like sql"),
+            ExecuteType::Command(_) => panic!("mongodb does not work like sql"),
             ExecuteType::Driver(statement) => match statement {
                 Statement::Create(_) => todo!(),
                 Statement::Drop(_) => todo!(),
@@ -50,7 +50,7 @@ impl Mongo {
                 Statement::_Phantom(_) => todo!(),
             },
         }
-        Ok(())
+        // Ok(())
     }
 }
 

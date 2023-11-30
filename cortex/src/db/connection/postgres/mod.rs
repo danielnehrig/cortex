@@ -1,4 +1,10 @@
-use postgres::Client;
+use std::{
+    cell::{RefCell, RefMut},
+    rc::Rc,
+};
+
+use postgres::{Client, Row};
+use postgres_types::ToSql;
 
 use crate::{
     connection::ExecuteType,
@@ -28,7 +34,8 @@ impl Default for ConnectionConfig<'_, Postgres> {
     }
 }
 
-pub struct Postgres(Client);
+#[derive(Clone)]
+pub struct Postgres(Rc<RefCell<Client>>);
 
 impl Postgres {
     pub fn new(config: ConnectionConfig<'_, Self>) -> Result<Self, postgres::Error> {
@@ -36,23 +43,37 @@ impl Postgres {
 
         let client = Client::connect(&uri, postgres::NoTls)?;
 
-        Ok(Self(client))
+        Ok(Self(Rc::new(RefCell::new(client))))
     }
 
-    pub fn get_client(&mut self) -> &mut Client {
-        &mut self.0
+    pub fn get_client(&mut self) -> RefMut<Client> {
+        self.0.borrow_mut()
     }
-}
 
-impl Postgres {
     pub fn execute(&mut self, data: ExecuteType<'_, Self>) -> Result<(), ExecuteError> {
         match data {
             ExecuteType::Command(command) => self
                 .0
+                .borrow_mut()
                 .batch_execute(command.as_str())
                 .map_err(|e| ExecuteError(e.to_string()))?,
             ExecuteType::Driver(_) => panic!("c driver based execution not supported"),
         }
         Ok(())
+    }
+
+    pub fn query(
+        &mut self,
+        data: ExecuteType<'_, Self>,
+        params: &[&(dyn ToSql + Sync)],
+    ) -> Result<Vec<Row>, ExecuteError> {
+        match data {
+            ExecuteType::Command(command) => self
+                .0
+                .borrow_mut()
+                .query(command.as_str(), params)
+                .map_err(|e| ExecuteError(e.to_string())),
+            ExecuteType::Driver(_) => panic!("c driver based execution not supported"),
+        }
     }
 }

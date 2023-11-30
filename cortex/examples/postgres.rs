@@ -38,16 +38,14 @@ fn main() {
     .add_statement(Statement::Drop(&db));
     let client_conf = ConnectionConfig::<Postgres>::default();
     let connection = Postgres::new(client_conf).expect("to connect to db");
-    let mut producer = PostgresStatementProducer::new(connection)
+    let producer = PostgresStatementProducer::new(connection)
         .add_step(init)
         .add_step(data)
         .execute()
         .expect("execute to work");
-    println!("{}", producer);
-    producer = producer
+    _ = producer
         .clean()
         .add_step(cleanup)
         .execute()
         .expect("execute to work");
-    println!("{}", producer);
 }
