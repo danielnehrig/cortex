@@ -34,40 +34,38 @@ Define and create a schema:
 
 ```rust
 use cortex::{
+    connection::{postgres::Postgres, ConnectionConfig},
     objects::{
-        statement::Statement,
+        database::Database,
+        statement::{Statement, DbAction},
         step::{Step, StepType},
         table::{PropType, Table, TableProp},
     },
-    producer::PostgresStatementProducer,
+    CortexPostgres,
 };
 
-fn main() {
-    let users = Table::<PostgresStatementProducer>::new("users").add_prop(TableProp::new(
-        "id",
-        PropType::Int,
-        None,
-    ));
-    let orders = Table::new("orders").add_prop(TableProp::new("id", PropType::Int, None));
-    let data = Step::new("Init Schema", StepType::Update)
-        .add_statement(Statement::Create(&users))
-        .add_statement(Statement::Create(&orders))
-        .add_statement(Statement::Drop(&users));
-    println!("{}", data);
-}
+let users = Table::new("users").add_prop(("id", PropType::Int, None));
+let orders = Table::new("orders").add_prop(("id", PropType::Int, None));
+let db = Database::new("test");
+let data = Step::new("Init Schema", StepType::Update, semver::Version::new(0, 0, 1))
+    .add_statement(Statement::Database(&db, DbAction::Create))
+    .add_statement(Statement::Table(&users, DbAction::Create))
+    .add_statement(Statement::Table(&orders, DbAction::Create))
+    .add_statement(Statement::Table(&users, DbAction::Drop));
+let client_conf = ConnectionConfig::<Postgres>::default();
+let connection = Postgres::new(client_conf).expect("to connect to db");
+let producer = CortexPostgres::new(connection).add_step(data);
 ```
 
 ## Extend `cortex` to Other Databases 🌍
 
-Simply implement these traits for your database:
-and take a look at the example of the `PostgresStatementProducer`
+Implement:
+- `CortexSomeDb` struct
+- `SomeDbStatementProducer` struct
+- `Connection` struct
 
-```rust
-impl DatabaseSpeicifics for SomeDatabaseStatementProducer {}
-impl CreateableObject for Table<'_, SomeDatabaseStatementProducer> {}
-impl DropableObject for Table<'_, SomeDatabaseStatementProducer> {}
-impl<'a> Display for Table<'a, SomeDatabaseStatementProducer> {}
-```
+see `cortex`, `producer` and `connection` folder for examples.
+
 
 ## Use Cases 💼
 
