@@ -46,8 +46,15 @@ fn main() {
     match db_in_use {
         Db::Postgres => {
             let client_conf = ConnectionConfig::<Postgres>::default();
+            let cortex_conf = cortex::CortexPostgresConfig {
+                plugins: vec![],
+                supported_db_versions: (
+                    semver::Version::new(15, 0, 0),
+                    semver::Version::new(16, 0, 0),
+                ),
+            };
             let connection = Postgres::new(client_conf).expect("to connect to db");
-            let cortex = CortexPostgres::new(connection)
+            let cortex = CortexPostgres::new(connection, cortex_conf)
                 .add_step(init)
                 .add_step(data)
                 .execute()

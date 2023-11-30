@@ -6,12 +6,12 @@ use cortex::{
         step::{Step, StepType},
         table::{PropType, Table},
     },
-    CortexPostgres,
+    CortexPostgres, CortexPostgresConfig,
 };
 
 #[cfg(feature = "postgres")]
 fn main() {
-    use cortex::objects::statement::DbAction;
+    use cortex::{objects::statement::DbAction, PostgresPlugins};
 
     let users = Table::new("users").add_prop(("id", PropType::Int, None));
     let orders = Table::new("orders").add_prop(("id", PropType::Int, None));
@@ -37,8 +37,15 @@ fn main() {
     )
     .add_statement(Statement::Database(&db, DbAction::Drop));
     let client_conf = ConnectionConfig::<Postgres>::default();
+    let cortex_conf = CortexPostgresConfig {
+        plugins: vec![PostgresPlugins::Postgis, PostgresPlugins::Timescale],
+        supported_db_versions: (
+            semver::Version::new(15, 0, 0),
+            semver::Version::new(16, 0, 0),
+        ),
+    };
     let connection = Postgres::new(client_conf).expect("to connect to db");
-    let producer = CortexPostgres::new(connection)
+    let producer = CortexPostgres::new(connection, cortex_conf)
         .add_step(init)
         .add_step(data)
         .execute()

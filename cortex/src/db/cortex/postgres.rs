@@ -5,14 +5,27 @@ use crate::{
 };
 
 #[derive(Clone)]
+pub enum PostgresPlugins {
+    Postgis,
+    Timescale,
+}
+
+#[derive(Clone)]
+pub struct CortexPostgresConfig {
+    pub plugins: Vec<PostgresPlugins>,
+    pub supported_db_versions: (semver::Version, semver::Version),
+}
+
+#[derive(Clone)]
 pub struct CortexPostgres<'a> {
     data: Vec<Step<'a>>,
     connection: Postgres,
+    config: CortexPostgresConfig,
     current_version: semver::Version,
 }
 
 impl<'a> CortexPostgres<'a> {
-    pub fn new(mut connection: Postgres) -> Self {
+    pub fn new(mut connection: Postgres, config: CortexPostgresConfig) -> Self {
         // get the current version of the database
         let mut current_version = semver::Version::parse("0.0.0").expect("failed to parse version");
         let version = connection.query(
@@ -32,6 +45,7 @@ impl<'a> CortexPostgres<'a> {
             data: Vec::new(),
             connection,
             current_version,
+            config,
         }
     }
 
@@ -53,12 +67,17 @@ impl<'a> CortexPostgres<'a> {
         self.connection.execute(ExecuteType::Command(
             "INSERT INTO __version__ (version) VALUES ('0.0.0')".to_string(),
         ))?;
-        self.connection.execute(ExecuteType::Command(
-            "CREATE EXTENSION IF NOT EXISTS postgis".to_string(),
-        ))?;
-        self.connection.execute(ExecuteType::Command(
-            "CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE".to_string(),
-        ))?;
+        self.config.plugins.iter().for_each(|plugin| {
+            match plugin {
+                PostgresPlugins::Postgis => self.connection.execute(ExecuteType::Command(
+                    "CREATE EXTENSION IF NOT EXISTS postgis".to_string(),
+                )),
+                PostgresPlugins::Timescale => self.connection.execute(ExecuteType::Command(
+                    "CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE".to_string(),
+                )),
+            }
+            .expect("failed to create extension");
+        });
         Ok(())
     }
 
@@ -114,6 +133,7 @@ impl<'a> CortexPostgres<'a> {
             data: Vec::new(),
             connection: self.connection.clone(),
             current_version: self.current_version.clone(),
+            config: self.config.clone(),
         })
     }
 }
