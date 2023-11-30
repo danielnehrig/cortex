@@ -62,7 +62,7 @@ impl Postgres {
                     .0
                     .borrow_mut()
                     .batch_execute(command.as_str())
-                    .map_err(|e| ExecuteError(format!("{} {}", command, e.to_string())));
+                    .map_err(|e| ExecuteError(format!("{} {}", command, e)));
             }
             ExecuteType::Driver(_) => panic!("c driver based execution not supported"),
         }
