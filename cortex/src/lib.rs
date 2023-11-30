@@ -16,25 +16,25 @@
 //!     connection::{postgres::Postgres, ConnectionConfig},
 //!     objects::{
 //!         database::Database,
-//!         statement::Statement,
+//!         statement::{Statement, DbAction},
 //!         step::{Step, StepType},
 //!         table::{PropType, Table, TableProp},
 //!     },
-//!     producer::PostgresStatementProducer,
+//!     CortexPostgres,
 //! };
 //!
 //!     // don't need to import table prop also can pass slice of tuples with table infos
-//!     let users: Table<PostgresStatementProducer> = Table::new("users").add_prop(TableProp::new("id", PropType::Int, None));
-//!     let orders: Table<PostgresStatementProducer> = Table::new("orders").add_prop(TableProp::new("id", PropType::Int, None));
-//!     let db: Database<PostgresStatementProducer> = Database::new("test");
-//!     let data = Step::new("Init Schema", StepType::Update)
-//!         .add_statement(Statement::Create(&db))
-//!         .add_statement(Statement::Create(&users))
-//!         .add_statement(Statement::Create(&orders))
-//!         .add_statement(Statement::Drop(&users));
-//!     let _client_conf = ConnectionConfig::<Postgres>::default();
-//!     let producer = PostgresStatementProducer::new().add_step(data);
-//!     println!("{}", producer);
+//!     let users = Table::new("users").add_prop(("id", PropType::Int, None));
+//!     let orders = Table::new("orders").add_prop(("id", PropType::Int, None));
+//!     let db = Database::new("test");
+//!     let data = Step::new("Init Schema", StepType::Update, semver::Version::new(0, 0, 1))
+//!         .add_statement(Statement::Database(&db, DbAction::Create))
+//!         .add_statement(Statement::Table(&users, DbAction::Create))
+//!         .add_statement(Statement::Table(&orders, DbAction::Create))
+//!         .add_statement(Statement::Table(&users, DbAction::Drop));
+//!     let client_conf = ConnectionConfig::<Postgres>::default();
+//!     let connection = Postgres::new(client_conf).expect("to connect to db");
+//!     let producer = CortexPostgres::new(connection).add_step(data);
 //! ```
 //! to see more examples take a look into the examples folder
 //!

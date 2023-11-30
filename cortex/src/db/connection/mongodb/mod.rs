@@ -37,7 +37,9 @@ pub struct Mongo(Client);
 impl Mongo {
     pub fn execute(&mut self, data: ExecuteType) -> Result<(), ExecuteError> {
         match data {
-            ExecuteType::Command(_) => panic!("mongodb does not work like sql"),
+            ExecuteType::Command(_) => {
+                panic!("mongodb does not work like sql we can not execute command directly afaik")
+            }
             ExecuteType::Driver(statement) => match statement {
                 Statement::Table(_, _) => unimplemented!(),
                 Statement::Database(d, action) => {

@@ -35,9 +35,12 @@ impl Default for ConnectionConfig<'_, Postgres> {
 }
 
 #[derive(Clone)]
+/// Postgres connection
+/// not thread safe only used to create the db layout with cortex
 pub struct Postgres(Rc<RefCell<Client>>);
 
 impl Postgres {
+    /// create a new connection
     pub fn new(config: ConnectionConfig<'_, Self>) -> Result<Self, postgres::Error> {
         let uri = config.get_uri();
 
@@ -50,6 +53,7 @@ impl Postgres {
         self.0.borrow_mut()
     }
 
+    /// execute a command
     pub fn execute(&mut self, data: ExecuteType) -> Result<(), ExecuteError> {
         match data {
             ExecuteType::Command(command) => {
@@ -64,6 +68,7 @@ impl Postgres {
         }
     }
 
+    /// query the database
     pub fn query(
         &mut self,
         data: ExecuteType,

@@ -59,9 +59,8 @@ impl Table {
     /// Create a new table
     /// # Example
     /// ```
-    /// use cortex::producer::PostgresStatementProducer;
     /// use cortex::objects::table::{Table};
-    /// let table: Table<PostgresStatementProducer> = Table::new("table");
+    /// let table  = Table::new("table");
     /// assert_eq!(table.name, "table".into());
     /// ```
     pub fn new(name: &str) -> Self {
@@ -75,12 +74,11 @@ impl Table {
     /// Add a property to the table
     /// # Example
     /// ```
-    /// use cortex::producer::PostgresStatementProducer;
     /// use cortex::objects::table::{Table, TableProp, PropType};
-    /// let table: Table<PostgresStatementProducer> = Table::new("table")
-    ///    .add_prop(TableProp::new("id", PropType::Int, None))
-    ///    .add_prop(TableProp::new("name", PropType::Text, None))
-    ///    .add_prop(TableProp::new("age", PropType::Int, None));
+    /// let table = Table::new("table")
+    ///    .add_prop(("id", PropType::Int, None))
+    ///    .add_prop(("name", PropType::Text, None))
+    ///    .add_prop(("age", PropType::Int, None));
     ///  assert_eq!(table.props.len(), 3);
     ///  assert_eq!(table.props[0].name, "id".into());
     ///  assert_eq!(table.props[1].name, "name".into());
@@ -94,9 +92,8 @@ impl Table {
     /// Add a properties to the table
     /// # Example
     /// ```
-    /// use cortex::producer::PostgresStatementProducer;
     /// use cortex::objects::table::{Table, TableProp, PropType};
-    /// let table: Table<PostgresStatementProducer> = Table::new("table")
+    /// let table = Table::new("table")
     ///    .add_props_as_slice(&[
     ///    ("id", PropType::Int, None),
     ///    ("name", PropType::Text, None),
@@ -121,12 +118,11 @@ impl Table {
     /// Add an annotation to the table
     /// # Example
     /// ```
-    /// use cortex::producer::PostgresStatementProducer;
     /// use cortex::objects::table::{Table, TableProp, PropType, TableAnnotation};
-    /// let table: Table<PostgresStatementProducer> = Table::new("table")
-    ///    .add_prop(TableProp::new("id", PropType::Int, None))
-    ///    .add_prop(TableProp::new("name", PropType::Text, None))
-    ///    .add_prop(TableProp::new("age", PropType::Int, None))
+    /// let table = Table::new("table")
+    ///    .add_prop(("id", PropType::Int, None))
+    ///    .add_prop(("name", PropType::Text, None))
+    ///    .add_prop(("age", PropType::Int, None))
     ///    .add_annotation(TableAnnotation::Partition);
     ///  assert_eq!(table.props.len(), 3);
     ///  assert_eq!(table.props[0].name, "id".into());
@@ -145,9 +141,8 @@ impl TableProp {
     /// Create a new property
     /// # Example
     /// ```
-    /// use cortex::producer::PostgresStatementProducer;
     /// use cortex::objects::table::{TableProp, PropType};
-    /// let prop: TableProp<PostgresStatementProducer> = TableProp::new("id", PropType::Int, None);
+    /// let prop = TableProp::new("id", PropType::Int, None);
     /// assert_eq!(prop.name, "id".into());
     /// ```
     pub fn new(name: &str, t_type: PropType, annotation: Option<PropAnnotation>) -> Self {
