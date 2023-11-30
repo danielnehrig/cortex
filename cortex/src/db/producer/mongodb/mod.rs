@@ -1,56 +1,53 @@
-use std::fmt::{Display, Formatter};
+use mongodb::Client;
+use tokio::runtime::Runtime;
 
-use crate::{
-    connection::{mongodb::Mongo, ExecuteError, ExecuteType},
-    objects::step::Step,
-};
+use crate::{connection::ExecuteError, objects::statement::DbAction};
 
-mod database;
-mod statement;
-mod step;
-mod table;
+pub(crate) struct MongodbStatementProducer;
 
-pub struct MongodbStatementProducer<'a> {
-    data: Vec<Step<'a, Self>>,
-    connection: Mongo,
-}
+impl MongodbStatementProducer {
+    pub(crate) fn database_statement(
+        client: &Client,
+        database: &str,
+        action: &DbAction,
+    ) -> Result<(), ExecuteError> {
+        let rt = Runtime::new().unwrap();
 
-impl<'a> MongodbStatementProducer<'a> {
-    pub fn new(connection: Mongo) -> Self {
-        Self {
-            data: Vec::new(),
-            connection,
+        match action {
+            DbAction::Create => rt.block_on(async {
+                client
+                    .database(database)
+                    .create_collection("db_created", None)
+                    .await
+                    .map_err(|e| ExecuteError(e.to_string()))
+            }),
+            DbAction::Drop => rt.block_on(async {
+                client
+                    .database(database)
+                    .drop(None)
+                    .await
+                    .map_err(|e| ExecuteError(e.to_string()))
+            }),
+            DbAction::Alter => panic!("altering a database is not supported"),
+            DbAction::Insert => panic!("inserting a database is not supported"),
         }
     }
 
-    pub fn add_step(mut self, step: Step<'a, Self>) -> Self {
-        self.data.push(step);
-        self
-    }
+    // fn create_collection(
+    // client: &Client,
+    // collection: &Table,
+    // action: &DbAction,
+    // ) -> Result<(), ExecuteError> {
+    // let db = client.database(&collection.database);
 
-    pub fn clean(mut self) -> Self {
-        self.data.clear();
-        self
-    }
+    // let rt = Runtime::new().unwrap();
 
-    pub fn execute(mut self) -> Result<Self, ExecuteError> {
-        for step in self.data {
-            for statement in step.statements {
-                self.connection.execute(ExecuteType::Driver(statement))?;
-            }
-        }
-        Ok(Self {
-            data: Vec::new(),
-            connection: self.connection,
-        })
-    }
-}
-
-impl Display for MongodbStatementProducer<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        for step in &self.data {
-            writeln!(f, "{}", step)?;
-        }
-        Ok(())
-    }
+    // rt.block_on(async {
+    // return db
+    // .create_collection(&collection.name, None)
+    // .await
+    // .map_err(|e| ExecuteError(e.to_string()));
+    // });
+    // Ok(())
+    // }
 }

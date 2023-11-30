@@ -5,9 +5,8 @@ use mongodb::{
 
 use crate::{
     connection::{ExecuteError, ExecuteType},
-    db::connection::ConnectionConfig,
+    db::{connection::ConnectionConfig, producer::mongodb::MongodbStatementProducer},
     objects::statement::Statement,
-    producer::MongodbStatementProducer,
 };
 
 impl ConnectionConfig<'_, Mongo> {
@@ -36,25 +35,18 @@ impl Default for ConnectionConfig<'_, Mongo> {
 pub struct Mongo(Client);
 
 impl Mongo {
-    pub fn execute(
-        &mut self,
-        data: ExecuteType<'_, MongodbStatementProducer>,
-    ) -> Result<(), ExecuteError> {
+    pub fn execute(&mut self, data: ExecuteType) -> Result<(), ExecuteError> {
         match data {
             ExecuteType::Command(_) => panic!("mongodb does not work like sql"),
             ExecuteType::Driver(statement) => match statement {
-                Statement::Create(_) => todo!(),
-                Statement::Drop(_) => todo!(),
-                Statement::Alter(_) => todo!(),
-                Statement::Insert(_) => todo!(),
-                Statement::_Phantom(_) => todo!(),
+                Statement::Table(_, _) => unimplemented!(),
+                Statement::Database(d, action) => {
+                    MongodbStatementProducer::database_statement(&self.0, &d.name, &action)
+                }
             },
         }
-        // Ok(())
     }
-}
 
-impl Mongo {
     #[cfg(feature = "async")]
     pub async fn new(config: ConnectionConfig<'_, Mongo>) -> mongodb::error::Result<Self> {
         // Replace the placeholder with your Atlas connection string

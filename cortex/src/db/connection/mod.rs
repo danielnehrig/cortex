@@ -30,9 +30,9 @@ impl ConnectError {
     }
 }
 
-pub enum ExecuteType<'a, T> {
+pub enum ExecuteType<'a> {
     Command(String),
-    Driver(Statement<'a, T>),
+    Driver(Statement<'a>),
 }
 
 #[derive(Debug)]

@@ -50,21 +50,23 @@ impl Postgres {
         self.0.borrow_mut()
     }
 
-    pub fn execute(&mut self, data: ExecuteType<'_, Self>) -> Result<(), ExecuteError> {
+    pub fn execute(&mut self, data: ExecuteType) -> Result<(), ExecuteError> {
         match data {
-            ExecuteType::Command(command) => self
-                .0
-                .borrow_mut()
-                .batch_execute(command.as_str())
-                .map_err(|e| ExecuteError(e.to_string()))?,
+            ExecuteType::Command(command) => {
+                println!("executing command: {}", command);
+                return self
+                    .0
+                    .borrow_mut()
+                    .batch_execute(command.as_str())
+                    .map_err(|e| ExecuteError(format!("{} {}", command, e.to_string())));
+            }
             ExecuteType::Driver(_) => panic!("c driver based execution not supported"),
         }
-        Ok(())
     }
 
     pub fn query(
         &mut self,
-        data: ExecuteType<'_, Self>,
+        data: ExecuteType,
         params: &[&(dyn ToSql + Sync)],
     ) -> Result<Vec<Row>, ExecuteError> {
         match data {

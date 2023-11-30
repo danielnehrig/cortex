@@ -3,10 +3,10 @@ use std::rc::Rc;
 use crate::db::objects::statement::Statement;
 
 #[derive(Clone)]
-pub struct Step<'a, T> {
+pub struct Step<'a> {
     pub name: Rc<str>,
     pub s_type: StepType,
-    pub statements: Vec<Statement<'a, T>>,
+    pub statements: Vec<Statement<'a>>,
     pub version: semver::Version,
 }
 
@@ -19,8 +19,8 @@ pub enum StepType {
     Update,
 }
 
-impl<'a, T> Step<'a, T> {
-    pub fn new(name: &'a str, s_type: StepType, version: semver::Version) -> Self {
+impl<'a> Step<'a> {
+    pub fn new(name: &str, s_type: StepType, version: semver::Version) -> Self {
         Self {
             name: Rc::from(name),
             s_type,
@@ -29,7 +29,7 @@ impl<'a, T> Step<'a, T> {
         }
     }
 
-    pub fn add_statement(mut self, statement: Statement<'a, T>) -> Self {
+    pub fn add_statement(mut self, statement: Statement<'a>) -> Self {
         self.statements.push(statement);
         self
     }

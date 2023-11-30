@@ -1,136 +1,104 @@
-use std::fmt::{Display, Formatter};
-
-use crate::{
-    connection::{postgres::Postgres, ExecuteError, ExecuteType},
-    objects::step::Step,
+use crate::objects::{
+    statement::{DbAction, Statement},
+    table::{PropAnnotation, PropType, TableAnnotation, TableProp},
 };
 
-mod database;
-mod statement;
-mod step;
-mod table;
-mod tests;
+pub(crate) struct PostgresStatementProducer;
 
-#[derive(Clone)]
-pub struct PostgresStatementProducer<'a> {
-    data: Vec<Step<'a, Self>>,
-    connection: Postgres,
-    current_version: semver::Version,
+fn table_annotation_to_db(annotation: &PropAnnotation) -> String {
+    match annotation {
+        PropAnnotation::PrimaryKey => "PRIMARY KEY".to_string(),
+        PropAnnotation::Unique => "UNIQUE".to_string(),
+        PropAnnotation::NotNull => "NOT NULL".to_string(),
+        PropAnnotation::Default => "DEFAULT".to_string(),
+        PropAnnotation::Check => "CHECK".to_string(),
+        PropAnnotation::Foreign => "FOREIGN".to_string(),
+        PropAnnotation::Constraint(_) => "CONSTRAINT".to_string(),
+        PropAnnotation::Empty => "".to_string(),
+    }
 }
 
-impl<'a> PostgresStatementProducer<'a> {
-    pub fn new(mut connection: Postgres) -> Self {
-        // get the current version of the database
-        let mut current_version = semver::Version::parse("0.0.0").expect("failed to parse version");
-        let version = connection.query(
-            ExecuteType::Command(
-                "SELECT version FROM __version__ ORDER BY version DESC LIMIT 1".to_string(),
-            ),
-            &[],
-        );
-        if let Ok(version) = version {
-            if let Some(version) = version.get(0) {
-                current_version =
-                    semver::Version::parse(version.get(0)).expect("failed to parse version");
+fn prop_type_to_db(prop_type: &PropType) -> String {
+    match prop_type {
+        PropType::Int => "INT".to_string(),
+        PropType::Text => "TEXT".to_string(),
+        PropType::Bool => "BOOL".to_string(),
+        PropType::Date => "DATE".to_string(),
+        PropType::Timestamp => "TIMESTAMP".to_string(),
+        PropType::BigInt => "BIGINT".to_string(),
+        PropType::Double => "DOUBLE".to_string(),
+        PropType::SmallInt => "SMALLINT".to_string(),
+    }
+}
+pub fn compose_prop(prop: &TableProp) -> String {
+    let t = prop_type_to_db(&prop.t_type);
+    match &prop.annotation.clone() {
+        Some(p) => {
+            let a = table_annotation_to_db(p);
+            format!("{} {} {}", prop.name, t, a)
+        }
+        None => {
+            format!("{} {}", prop.name, t)
+        }
+    }
+}
+pub fn serialize_annotation(annotations: &TableAnnotation) -> String {
+    match annotations {
+        TableAnnotation::Partition => "PARTITION".to_string(),
+        TableAnnotation::View => "VIEW".to_string(),
+    }
+}
+
+impl PostgresStatementProducer {
+    pub fn map(statement: &Statement) -> String {
+        match statement {
+            Statement::Table(t, action) => PostgresStatementProducer::table_statement(t, action),
+            Statement::Database(d, action) => {
+                PostgresStatementProducer::database_statement(d, action)
             }
         }
-        println!("current version: {}", current_version);
-        Self {
-            data: Vec::new(),
-            connection,
-            current_version,
-        }
     }
 
-    pub fn add_step(mut self, step: Step<'a, Self>) -> Self {
-        self.data.push(step);
-        self.data.sort_by(|a, b| a.version.cmp(&b.version));
-        self
-    }
+    fn table_statement(table: &crate::objects::table::Table, action: &DbAction) -> String {
+        match action {
+            DbAction::Create => {
+                let props = table
+                    .props
+                    .iter()
+                    .map(compose_prop)
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                let annotations = table
+                    .annotations
+                    .iter()
+                    .map(serialize_annotation)
+                    .collect::<Vec<String>>()
+                    .join(" ");
 
-    pub fn clean(mut self) -> Self {
-        self.data.clear();
-        self
-    }
-
-    fn setup_initial_version(&mut self) -> Result<(), ExecuteError> {
-        self.connection.execute(ExecuteType::Command(
-            "CREATE TABLE IF NOT EXISTS __version__ (version VARCHAR(255) NOT NULL)".to_string(),
-        ))?;
-        self.connection.execute(ExecuteType::Command(
-            "INSERT INTO __version__ (version) VALUES ('0.0.0')".to_string(),
-        ))?;
-        self.connection.execute(ExecuteType::Command(
-            "CREATE EXTENSION IF NOT EXISTS postgis".to_string(),
-        ))?;
-        self.connection.execute(ExecuteType::Command(
-            "CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE".to_string(),
-        ))?;
-        Ok(())
-    }
-
-    fn set_version(&mut self, version: &semver::Version) -> Result<(), ExecuteError> {
-        self.connection.execute(ExecuteType::Command(
-            "CREATE TABLE IF NOT EXISTS __version__ (version VARCHAR(255) NOT NULL)".to_string(),
-        ))?;
-        self.connection.execute(ExecuteType::Command(format!(
-            "INSERT INTO __version__ (version) VALUES ('{}')",
-            version
-        )))?;
-        Ok(())
-    }
-
-    pub fn execute(&mut self) -> Result<Self, ExecuteError> {
-        if self.data.is_empty() {
-            return Err(ExecuteError(
-                "no steps have been added to the producer".to_string(),
-            ));
-        }
-        if self
-            .data
-            .iter()
-            .filter(|step| step.version >= self.current_version)
-            .count()
-            == 0
-        {
-            return Err(ExecuteError(
-                "no steps to update everything on the latest version".to_string(),
-            ));
-        }
-        for step in self.data.clone() {
-            if step.version >= self.current_version {
-                println!("executing step: {}", step.version);
-                match step.s_type {
-                    crate::objects::step::StepType::InitSetup => {
-                        self.setup_initial_version()?;
-                        for statement in &step.statements {
-                            self.connection
-                                .execute(ExecuteType::Command(statement.to_string()))?;
-                        }
-                    }
-                    crate::objects::step::StepType::Update => {
-                        for statement in &step.statements {
-                            self.connection
-                                .execute(ExecuteType::Command(statement.to_string()))?;
-                        }
-                        self.set_version(&step.version)?;
+                match (props.is_empty(), annotations.is_empty()) {
+                    (true, true) => format!("CREATE TABLE {};", table.name),
+                    (true, false) => format!("CREATE TABLE {} {};", table.name, annotations),
+                    (false, true) => format!("CREATE TABLE {} ({});", table.name, props),
+                    (false, false) => {
+                        format!("CREATE TABLE {} ({}) {};", table.name, props, annotations)
                     }
                 }
             }
+            DbAction::Drop => format!("DROP TABLE IF EXISTS {};", table.name),
+            DbAction::Alter => panic!("altering a table is not supported"),
+            DbAction::Insert => panic!("inserting a table is not supported"),
         }
-        Ok(Self {
-            data: Vec::new(),
-            connection: self.connection.clone(),
-            current_version: self.current_version.clone(),
-        })
     }
-}
 
-impl Display for PostgresStatementProducer<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        for step in &self.data {
-            writeln!(f, "{}", step)?;
+    fn database_statement(
+        database: &crate::objects::database::Database,
+        action: &DbAction,
+    ) -> String {
+        match action {
+            DbAction::Create => format!("CREATE DATABASE {};", database.name),
+            DbAction::Drop => format!("DROP DATABASE {};", database.name),
+            DbAction::Alter => panic!("altering a database is not supported"),
+            DbAction::Insert => panic!("inserting a database is not supported"),
         }
-        Ok(())
     }
 }

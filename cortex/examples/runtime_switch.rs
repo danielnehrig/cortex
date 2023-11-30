@@ -9,10 +9,16 @@ use cortex::{
     CortexPostgres,
 };
 
+#[warn(dead_code)]
+enum Db {
+    Postgres,
+}
+
 #[cfg(feature = "postgres")]
 fn main() {
     use cortex::objects::statement::DbAction;
 
+    let db_in_use = Db::Postgres;
     let users = Table::new("users").add_prop(("id", PropType::Int, None));
     let orders = Table::new("orders").add_prop(("id", PropType::Int, None));
     let db = Database::new("testo");
@@ -36,16 +42,21 @@ fn main() {
         semver::Version::new(0, 0, 3),
     )
     .add_statement(Statement::Database(&db, DbAction::Drop));
-    let client_conf = ConnectionConfig::<Postgres>::default();
-    let connection = Postgres::new(client_conf).expect("to connect to db");
-    let producer = CortexPostgres::new(connection)
-        .add_step(init)
-        .add_step(data)
-        .execute()
-        .expect("execute to work");
-    _ = producer
-        .clean()
-        .add_step(cleanup)
-        .execute()
-        .expect("execute to work");
+
+    match db_in_use {
+        Db::Postgres => {
+            let client_conf = ConnectionConfig::<Postgres>::default();
+            let connection = Postgres::new(client_conf).expect("to connect to db");
+            let cortex = CortexPostgres::new(connection)
+                .add_step(init)
+                .add_step(data)
+                .execute()
+                .expect("execute to work");
+            _ = cortex
+                .clean()
+                .add_step(cleanup)
+                .execute()
+                .expect("execute to work");
+        }
+    }
 }

@@ -3,23 +3,21 @@ use std::rc::Rc;
 #[doc(alias = "Collection")]
 #[derive(Debug, Clone)]
 /// Table struct for creating tables
-pub struct Table<T> {
+pub struct Table {
     /// name of the table
     pub name: Rc<str>,
     /// properties of the table
-    pub props: Vec<TableProp<T>>,
+    pub props: Vec<TableProp>,
     /// annotations of the table
     pub annotations: Vec<TableAnnotation>,
-    _marker: std::marker::PhantomData<T>,
 }
 
 #[derive(Debug, Clone)]
 /// TableProp struct for creating properties of a table
-pub struct TableProp<T> {
+pub struct TableProp {
     pub name: Rc<str>,
     pub t_type: PropType,
     pub annotation: Option<PropAnnotation>,
-    _marker: std::marker::PhantomData<T>,
 }
 
 #[derive(Debug, Clone)]
@@ -31,8 +29,8 @@ pub enum PropType {
     Bool,
     Date,
     Timestamp,
-    Bigint,
-    Smallint,
+    BigInt,
+    SmallInt,
     // ...
 }
 
@@ -57,7 +55,7 @@ pub enum TableAnnotation {
     View,
 }
 
-impl<T> Table<T> {
+impl Table {
     /// Create a new table
     /// # Example
     /// ```
@@ -71,7 +69,6 @@ impl<T> Table<T> {
             name: Rc::from(name),
             props: Vec::new(),
             annotations: Vec::new(),
-            _marker: std::marker::PhantomData,
         }
     }
 
@@ -90,7 +87,7 @@ impl<T> Table<T> {
     ///  assert_eq!(table.props[2].name, "age".into());
     /// ```
     pub fn add_prop(mut self, prop: (&str, PropType, Option<PropAnnotation>)) -> Self {
-        self.props.push(TableProp::<T>::new(prop.0, prop.1, prop.2));
+        self.props.push(TableProp::new(prop.0, prop.1, prop.2));
         self
     }
 
@@ -144,7 +141,7 @@ impl<T> Table<T> {
     }
 }
 
-impl<T> TableProp<T> {
+impl TableProp {
     /// Create a new property
     /// # Example
     /// ```
@@ -158,7 +155,6 @@ impl<T> TableProp<T> {
             name: Rc::from(name),
             t_type,
             annotation,
-            _marker: std::marker::PhantomData,
         }
     }
 }
