@@ -7,13 +7,13 @@ use crate::objects::statement::Statement;
 /// Table struct for creating tables
 pub struct Table {
     /// name of the table
-    pub(crate) name: Rc<str>,
+    pub name: Rc<str>,
     /// properties of the table
-    pub(crate) props: Vec<TableProp>,
+    pub props: Vec<TableProp>,
     /// annotations of the table
-    pub(crate) annotations: Vec<TableAnnotation>,
+    pub annotations: Vec<TableAnnotation>,
     /// database of the table
-    pub(crate) database: Option<Rc<str>>,
+    pub database: Option<Rc<str>>,
 }
 
 #[derive(Debug, Clone)]
