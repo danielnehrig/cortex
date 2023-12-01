@@ -47,4 +47,9 @@ impl Step {
         self.statements.push((statement.into(), action));
         self
     }
+
+    pub fn add_statements(mut self, statements: Vec<(Statement, DbAction)>) -> Self {
+        self.statements.extend(statements);
+        self
+    }
 }

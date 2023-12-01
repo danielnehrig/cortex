@@ -1,13 +1,4 @@
-use cortex::{
-    connection::{postgres::Postgres, ConnectionConfig},
-    objects::{
-        database::Database,
-        statement::DbAction,
-        step::{Step, StepType},
-        table::{PropType, Table},
-    },
-    CortexPostgres,
-};
+use cortex::prelude::*;
 
 #[warn(dead_code)]
 enum Db {

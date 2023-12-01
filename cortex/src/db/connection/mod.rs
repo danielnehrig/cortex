@@ -7,6 +7,16 @@ pub mod postgres;
 #[cfg(feature = "sqlite")]
 pub mod sqlite;
 
+pub mod prelude {
+    #[cfg(feature = "mongodb")]
+    pub use super::mongodb::*;
+    #[cfg(feature = "postgres")]
+    pub use super::postgres::*;
+    #[cfg(feature = "sqlite")]
+    pub use super::sqlite::*;
+    pub use super::ConnectionConfig;
+}
+
 #[derive(Debug, Default)]
 pub struct ConnectionConfig<'a, T> {
     host: &'a str,

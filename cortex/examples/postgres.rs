@@ -1,20 +1,10 @@
-use cortex::{
-    connection::{postgres::Postgres, ConnectionConfig},
-    objects::{
-        database::Database,
-        step::{Step, StepType},
-        table::{PropType, Table},
-    },
-    CortexPostgres, CortexPostgresConfig,
-};
+use cortex::prelude::*;
 
 #[cfg(feature = "postgres")]
 fn main() {
-    use cortex::{objects::statement::DbAction, PostgresPlugins};
-
+    let db = Database::new("testo");
     let users = Table::new("users").add_prop(("id", PropType::Int, None));
     let orders = Table::new("orders").add_prop(("id", PropType::Int, None));
-    let db = Database::new("testo");
     let init = Step::new(
         "Init Schema",
         StepType::InitSetup,

@@ -67,6 +67,12 @@ impl CortexPostgres {
         self
     }
 
+    pub fn add_steps(mut self, steps: Vec<Step>) -> Self {
+        self.data.extend(steps);
+        self.data.sort_by(|a, b| a.version.cmp(&b.version));
+        self
+    }
+
     /// Removes all steps from cortex
     pub fn clean(mut self) -> Self {
         self.data.clear();

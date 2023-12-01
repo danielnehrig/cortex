@@ -72,6 +72,15 @@ pub use crate::db::cortex::mongodb::*;
 #[cfg(feature = "postgres")]
 pub use crate::db::cortex::postgres::*;
 
+pub mod prelude {
+    #[cfg(feature = "mongodb")]
+    pub use crate::db::cortex::mongodb::*;
+    #[cfg(feature = "postgres")]
+    pub use crate::db::cortex::postgres::*;
+    pub use crate::db::prelude::*;
+    pub use crate::objects::prelude::*;
+}
+
 pub mod connection {
     pub use crate::db::connection::*;
 }

@@ -1,21 +1,8 @@
-use cortex::{
-    objects::{
-        database::Database,
-        step::{Step, StepType},
-        table::{PropType, Table},
-    },
-    CortexMongo,
-};
+use cortex::prelude::*;
 
 #[cfg(feature = "mongodb")]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    use cortex::{
-        connection::{mongodb::Mongo, ConnectionConfig},
-        objects::statement::DbAction,
-        CortexMongoConfig, ExecutionMode,
-    };
-
     let users: Table = Table::new("users")
         .add_props_as_slice(&[("id", PropType::Int, None)])
         .on_db("default");
