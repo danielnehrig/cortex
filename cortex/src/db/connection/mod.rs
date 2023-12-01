@@ -1,4 +1,4 @@
-use crate::objects::statement::Statement;
+use crate::objects::statement::{DbAction, Statement};
 
 #[cfg(feature = "mongodb")]
 pub mod mongodb;
@@ -30,9 +30,9 @@ impl ConnectError {
     }
 }
 
-pub enum ExecuteType<'a> {
+pub enum ExecuteType {
     Command(String),
-    Driver(Statement<'a>),
+    Driver(Statement, DbAction),
 }
 
 #[derive(Debug)]

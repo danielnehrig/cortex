@@ -1,6 +1,6 @@
 use mongodb::{
     options::{ClientOptions, ServerApi, ServerApiVersion},
-    Client,
+    Client, ClientSession,
 };
 
 use crate::{
@@ -32,18 +32,26 @@ impl Default for ConnectionConfig<'_, Mongo> {
     }
 }
 
-pub struct Mongo(Client);
+pub struct Mongo(pub Client);
 
 impl Mongo {
-    pub fn execute(&mut self, data: ExecuteType) -> Result<(), ExecuteError> {
+    pub fn execute(
+        &mut self,
+        data: ExecuteType,
+        session: &mut ClientSession,
+    ) -> Result<(), ExecuteError> {
         match data {
             ExecuteType::Command(_) => {
                 panic!("mongodb does not work like sql we can not execute command directly afaik")
             }
-            ExecuteType::Driver(statement) => match statement {
-                Statement::Table(_, _) => unimplemented!(),
-                Statement::Database(d, action) => {
-                    MongodbStatementProducer::database_statement(&self.0, &d.name, &action)
+            ExecuteType::Driver(statement, action) => match statement {
+                Statement::Table(t) => {
+                    MongodbStatementProducer::collection_statement((&self.0, session), &t, &action)
+                }
+                Statement::Database(_) => {
+                    // MongodbStatementProducer::database_statement(&self.0, &d, &action)
+                    // do nothing
+                    Ok(())
                 }
             },
         }
@@ -73,15 +81,12 @@ impl Mongo {
     }
 
     #[cfg(feature = "async")]
-    pub async fn get_client(&self) -> mongodb::error::Result<Client> {
-        Ok(self.0.clone())
+    pub async fn get_client(&self) -> Client {
+        self.0.clone()
     }
 
     #[cfg(feature = "async")]
-    pub async fn get_database(
-        &self,
-        database_name: &str,
-    ) -> mongodb::error::Result<mongodb::Database> {
-        Ok(self.0.database(database_name))
+    pub async fn get_database(&self, database_name: &str) -> mongodb::Database {
+        self.0.database(database_name)
     }
 }

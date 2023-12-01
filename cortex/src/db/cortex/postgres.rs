@@ -6,25 +6,36 @@ use crate::{
 
 #[derive(Clone)]
 pub enum PostgresPlugins {
+    /// Postgis is a plugin that allows you to use geospatial data
     Postgis,
+    /// Timescale is a plugin that allows you to use time series data in an efficient way
     Timescale,
 }
 
 #[derive(Clone)]
 pub struct CortexPostgresConfig {
+    /// Plugins/Extensions that should be installed on the database
     pub plugins: Vec<PostgresPlugins>,
+    /// The supported versions of the database
     pub supported_db_versions: (semver::Version, semver::Version),
 }
 
 #[derive(Clone)]
-pub struct CortexPostgres<'a> {
-    data: Vec<Step<'a>>,
+pub struct CortexPostgres {
+    /// The steps that should be executed
+    data: Vec<Step>,
+    /// The connection to the database
     connection: Postgres,
+    /// The config of Cortex
     config: CortexPostgresConfig,
-    current_version: semver::Version,
+    /// The current version of the database
+    current_schema_version: semver::Version,
 }
 
-impl<'a> CortexPostgres<'a> {
+impl CortexPostgres {
+    /// Creates a new instance of CortexPostgres
+    /// Everythig Cortex Prefixed are the main orchestration objects of Cortex
+    /// Which are used to create the database and setups around it
     pub fn new(mut connection: Postgres, config: CortexPostgresConfig) -> Self {
         // get the current version of the database
         let mut current_version = semver::Version::parse("0.0.0").expect("failed to parse version");
@@ -44,22 +55,26 @@ impl<'a> CortexPostgres<'a> {
         Self {
             data: Vec::new(),
             connection,
-            current_version,
+            current_schema_version: current_version,
             config,
         }
     }
 
-    pub fn add_step(mut self, step: Step<'a>) -> Self {
+    /// Adds a step to cortex
+    pub fn add_step(mut self, step: Step) -> Self {
         self.data.push(step);
         self.data.sort_by(|a, b| a.version.cmp(&b.version));
         self
     }
 
+    /// Removes all steps from cortex
     pub fn clean(mut self) -> Self {
         self.data.clear();
         self
     }
 
+    /// private method of db setup for postgres
+    /// this is run on InitSetup Step
     fn setup_initial_version(&mut self) -> Result<(), ExecuteError> {
         self.connection.execute(ExecuteType::Command(
             "CREATE TABLE IF NOT EXISTS __version__ (version VARCHAR(255) NOT NULL)".to_string(),
@@ -81,6 +96,7 @@ impl<'a> CortexPostgres<'a> {
         Ok(())
     }
 
+    /// if a step is executed update the version of the database
     fn set_version(&mut self, version: &semver::Version) -> Result<(), ExecuteError> {
         self.connection.execute(ExecuteType::Command(format!(
             "INSERT INTO __version__ (version) VALUES ('{}')",
@@ -89,6 +105,7 @@ impl<'a> CortexPostgres<'a> {
         Ok(())
     }
 
+    /// Executes all steps that have been added to cortex
     pub fn execute(&mut self) -> Result<Self, ExecuteError> {
         if self.data.is_empty() {
             return Err(ExecuteError(
@@ -98,7 +115,7 @@ impl<'a> CortexPostgres<'a> {
         if self
             .data
             .iter()
-            .filter(|step| step.version >= self.current_version)
+            .filter(|step| step.version >= self.current_schema_version)
             .count()
             == 0
         {
@@ -107,21 +124,21 @@ impl<'a> CortexPostgres<'a> {
             ));
         }
         for step in self.data.clone() {
-            if step.version >= self.current_version {
+            if step.version >= self.current_schema_version {
                 println!("executing step: {}", step.version);
                 match step.s_type {
                     crate::objects::step::StepType::InitSetup => {
                         self.setup_initial_version()?;
-                        for statement in &step.statements {
+                        for (statement, action) in &step.statements {
                             self.connection.execute(ExecuteType::Command(
-                                PostgresStatementProducer::map(statement),
+                                PostgresStatementProducer::map(statement, action),
                             ))?;
                         }
                     }
                     crate::objects::step::StepType::Update => {
-                        for statement in &step.statements {
+                        for (statement, action) in &step.statements {
                             self.connection.execute(ExecuteType::Command(
-                                PostgresStatementProducer::map(statement),
+                                PostgresStatementProducer::map(statement, action),
                             ))?;
                         }
                         self.set_version(&step.version)?;
@@ -132,7 +149,7 @@ impl<'a> CortexPostgres<'a> {
         Ok(Self {
             data: Vec::new(),
             connection: self.connection.clone(),
-            current_version: self.current_version.clone(),
+            current_schema_version: self.current_schema_version.clone(),
             config: self.config.clone(),
         })
     }

@@ -1,7 +1,6 @@
 use cortex::{
     objects::{
         database::Database,
-        statement::Statement,
         step::{Step, StepType},
         table::{PropType, Table},
     },
@@ -28,10 +27,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         StepType::Update,
         semver::Version::new(0, 0, 1),
     )
-    .add_statement(Statement::Database(&db, DbAction::Create))
-    .add_statement(Statement::Table(&users, DbAction::Create))
-    .add_statement(Statement::Table(&orders, DbAction::Create))
-    .add_statement(Statement::Table(&users, DbAction::Drop));
+    .add_statement(&db, DbAction::Create)
+    .add_statement(&users, DbAction::Create)
+    .add_statement(&orders, DbAction::Create)
+    .add_statement(&users, DbAction::Drop);
     let client_conf = ConnectionConfig::default();
     let mongo = Mongo::new(client_conf).await?;
     let _ = CortexMongo::new(mongo).add_step(data);

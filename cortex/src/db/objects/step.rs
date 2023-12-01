@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::db::objects::statement::Statement;
+use crate::{db::objects::statement::Statement, objects::statement::DbAction};
 
 #[derive(Clone)]
 /// Steps are the main unit of work in the migration system.
@@ -11,13 +11,13 @@ use crate::db::objects::statement::Statement;
 /// Every step can have a description, which is used to describe the step
 /// The version is used to determine the order of the steps
 /// and also if the step has already been run.
-pub struct Step<'a> {
+pub struct Step {
     /// The name of the step
     pub name: Rc<str>,
     /// The type of the step
     pub s_type: StepType,
     /// The statements that are run in the step
-    pub statements: Vec<Statement<'a>>,
+    pub statements: Vec<(Statement, DbAction)>,
     /// The version of the step
     pub version: semver::Version,
 }
@@ -31,7 +31,7 @@ pub enum StepType {
     Update,
 }
 
-impl<'a> Step<'a> {
+impl Step {
     /// Create a new step with the given name, type and version.
     pub fn new(name: &str, s_type: StepType, version: semver::Version) -> Self {
         Self {
@@ -43,8 +43,8 @@ impl<'a> Step<'a> {
     }
 
     /// Add a statement to the step.
-    pub fn add_statement(mut self, statement: Statement<'a>) -> Self {
-        self.statements.push(statement);
+    pub fn add_statement(mut self, statement: impl Into<Statement>, action: DbAction) -> Self {
+        self.statements.push((statement.into(), action));
         self
     }
 }

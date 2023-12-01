@@ -28,10 +28,10 @@
 //!     let orders = Table::new("orders").add_prop(("id", PropType::Int, None));
 //!     let db = Database::new("test");
 //!     let data = Step::new("Init Schema", StepType::Update, semver::Version::new(0, 0, 1))
-//!         .add_statement(Statement::Database(&db, DbAction::Create))
-//!         .add_statement(Statement::Table(&users, DbAction::Create))
-//!         .add_statement(Statement::Table(&orders, DbAction::Create))
-//!         .add_statement(Statement::Table(&users, DbAction::Drop));
+//!         .add_statement(&db, DbAction::Create)
+//!         .add_statement(&users, DbAction::Create)
+//!         .add_statement(&orders, DbAction::Create)
+//!         .add_statement(&users, DbAction::Drop);
 //!     let _client_conf = ConnectionConfig::<Postgres>::default();
 //!     let _cortex_conf = CortexPostgresConfig {
 //!        plugins: vec![PostgresPlugins::Postgis, PostgresPlugins::Timescale],

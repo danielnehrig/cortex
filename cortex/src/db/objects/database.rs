@@ -1,5 +1,7 @@
 use std::rc::Rc;
 
+use crate::objects::statement::Statement;
+
 #[derive(Debug, Clone)]
 /// Database related information
 pub struct Database {
@@ -12,5 +14,17 @@ impl Database {
         Self {
             name: Rc::from(name),
         }
+    }
+}
+
+impl From<Database> for Statement {
+    fn from(database: Database) -> Self {
+        Statement::Database(database)
+    }
+}
+
+impl From<&Database> for Statement {
+    fn from(database: &Database) -> Self {
+        Statement::Database(database.clone())
     }
 }

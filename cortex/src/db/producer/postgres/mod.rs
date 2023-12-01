@@ -1,6 +1,7 @@
 use crate::objects::{
+    database::Database,
     statement::{DbAction, Statement},
-    table::{PropAnnotation, PropType, TableAnnotation, TableProp},
+    table::{PropAnnotation, PropType, Table, TableAnnotation, TableProp},
 };
 
 pub(crate) struct PostgresStatementProducer;
@@ -50,16 +51,14 @@ pub fn serialize_annotation(annotations: &TableAnnotation) -> String {
 }
 
 impl PostgresStatementProducer {
-    pub fn map(statement: &Statement) -> String {
+    pub fn map(statement: &Statement, action: &DbAction) -> String {
         match statement {
-            Statement::Table(t, action) => PostgresStatementProducer::table_statement(t, action),
-            Statement::Database(d, action) => {
-                PostgresStatementProducer::database_statement(d, action)
-            }
+            Statement::Table(t) => PostgresStatementProducer::table_statement(t, action),
+            Statement::Database(d) => PostgresStatementProducer::database_statement(d, action),
         }
     }
 
-    fn table_statement(table: &crate::objects::table::Table, action: &DbAction) -> String {
+    fn table_statement(table: &Table, action: &DbAction) -> String {
         match action {
             DbAction::Create => {
                 let props = table
@@ -90,10 +89,7 @@ impl PostgresStatementProducer {
         }
     }
 
-    fn database_statement(
-        database: &crate::objects::database::Database,
-        action: &DbAction,
-    ) -> String {
+    fn database_statement(database: &Database, action: &DbAction) -> String {
         match action {
             DbAction::Create => format!("CREATE DATABASE {};", database.name),
             DbAction::Drop => format!("DROP DATABASE {};", database.name),

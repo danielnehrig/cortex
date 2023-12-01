@@ -2,7 +2,6 @@ use cortex::{
     connection::{postgres::Postgres, ConnectionConfig},
     objects::{
         database::Database,
-        statement::Statement,
         step::{Step, StepType},
         table::{PropType, Table},
     },
@@ -21,21 +20,21 @@ fn main() {
         StepType::InitSetup,
         semver::Version::new(0, 0, 1),
     )
-    .add_statement(Statement::Database(&db, DbAction::Create));
+    .add_statement(&db, DbAction::Create);
     let data = Step::new(
         "Update Schema",
         StepType::Update,
         semver::Version::new(0, 0, 2),
     )
-    .add_statement(Statement::Table(&users, DbAction::Create))
-    .add_statement(Statement::Table(&orders, DbAction::Create))
-    .add_statement(Statement::Table(&users, DbAction::Drop));
+    .add_statement(&users, DbAction::Create)
+    .add_statement(&orders, DbAction::Create)
+    .add_statement(&users, DbAction::Drop);
     let cleanup = Step::new(
         "Update Schema",
         StepType::Update,
         semver::Version::new(0, 0, 3),
     )
-    .add_statement(Statement::Database(&db, DbAction::Drop));
+    .add_statement(&db, DbAction::Drop);
     let client_conf = ConnectionConfig::<Postgres>::default();
     let cortex_conf = CortexPostgresConfig {
         plugins: vec![PostgresPlugins::Postgis, PostgresPlugins::Timescale],

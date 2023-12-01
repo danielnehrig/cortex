@@ -1,15 +1,19 @@
 use std::rc::Rc;
 
+use crate::objects::statement::Statement;
+
 #[doc(alias = "Collection")]
 #[derive(Debug, Clone)]
 /// Table struct for creating tables
 pub struct Table {
     /// name of the table
-    pub name: Rc<str>,
+    pub(crate) name: Rc<str>,
     /// properties of the table
-    pub props: Vec<TableProp>,
+    pub(crate) props: Vec<TableProp>,
     /// annotations of the table
-    pub annotations: Vec<TableAnnotation>,
+    pub(crate) annotations: Vec<TableAnnotation>,
+    /// database of the table
+    pub(crate) database: Option<Rc<str>>,
 }
 
 #[derive(Debug, Clone)]
@@ -68,6 +72,7 @@ impl Table {
             name: Rc::from(name),
             props: Vec::new(),
             annotations: Vec::new(),
+            database: None,
         }
     }
 
@@ -86,6 +91,19 @@ impl Table {
     /// ```
     pub fn add_prop(mut self, prop: (&str, PropType, Option<PropAnnotation>)) -> Self {
         self.props.push(TableProp::new(prop.0, prop.1, prop.2));
+        self
+    }
+
+    /// Add a database to the table
+    /// # Example
+    /// ```
+    /// use cortex::objects::table::{Table};
+    /// let table = Table::new("table")
+    ///   .on_db("db");
+    ///   assert_eq!(table.database.unwrap(), "db".into());
+    /// ```
+    pub fn on_db(mut self, db: &str) -> Self {
+        self.database = Some(Rc::from(db));
         self
     }
 
@@ -134,6 +152,18 @@ impl Table {
     pub fn add_annotation(mut self, annotation: TableAnnotation) -> Self {
         self.annotations.push(annotation);
         self
+    }
+}
+
+impl From<Table> for Statement {
+    fn from(table: Table) -> Self {
+        Statement::Table(table)
+    }
+}
+
+impl From<&Table> for Statement {
+    fn from(table: &Table) -> Self {
+        Statement::Table(table.clone())
     }
 }
 

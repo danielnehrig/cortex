@@ -11,7 +11,7 @@ pub enum DbAction {
 
 #[derive(Clone)]
 /// A statement is a single action that is run on the database.
-pub enum Statement<'a> {
-    Table(&'a Table, DbAction),
-    Database(&'a Database, DbAction),
+pub enum Statement {
+    Table(Table),
+    Database(Database),
 }

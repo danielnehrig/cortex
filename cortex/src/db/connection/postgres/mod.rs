@@ -64,7 +64,7 @@ impl Postgres {
                     .batch_execute(command.as_str())
                     .map_err(|e| ExecuteError(format!("{} {}", command, e)));
             }
-            ExecuteType::Driver(_) => panic!("c driver based execution not supported"),
+            ExecuteType::Driver(_, _) => panic!("c driver based execution not supported"),
         }
     }
 
@@ -80,7 +80,7 @@ impl Postgres {
                 .borrow_mut()
                 .query(command.as_str(), params)
                 .map_err(|e| ExecuteError(e.to_string())),
-            ExecuteType::Driver(_) => panic!("c driver based execution not supported"),
+            ExecuteType::Driver(_, _) => panic!("c driver based execution not supported"),
         }
     }
 }
