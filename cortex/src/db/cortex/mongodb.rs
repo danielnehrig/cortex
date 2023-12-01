@@ -66,7 +66,7 @@ impl CortexMongo {
         if self
             .data
             .iter()
-            .filter(|step| step.version >= self.current_schema_version)
+            .filter(|step| step.version > self.current_schema_version)
             .count()
             == 0
         {
@@ -75,7 +75,7 @@ impl CortexMongo {
             ));
         }
         for step in self.data {
-            if step.version >= self.current_schema_version {
+            if step.version > self.current_schema_version {
                 for statement in step.statements {
                     self.connection
                         .execute(ExecuteType::Driver(statement.0, statement.1), None)
@@ -100,7 +100,7 @@ impl CortexMongo {
         if self
             .data
             .iter()
-            .filter(|step| step.version >= self.current_schema_version)
+            .filter(|step| step.version > self.current_schema_version)
             .count()
             == 0
         {
@@ -109,7 +109,7 @@ impl CortexMongo {
             ));
         }
         for step in self.data {
-            if step.version >= self.current_schema_version {
+            if step.version > self.current_schema_version {
                 let mut session = self.connection.0.start_session(None).await.map_err(|e| {
                     ExecuteError(format!("failed to start session for mongodb: {}", e))
                 })?;

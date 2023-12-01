@@ -142,7 +142,7 @@ impl CortexPostgres {
         if self
             .data
             .iter()
-            .filter(|step| step.version >= self.current_schema_version)
+            .filter(|step| step.version > self.current_schema_version)
             .count()
             == 0
         {
@@ -152,7 +152,9 @@ impl CortexPostgres {
         }
         let all_statements_len = self.count_statements();
         for step in self.data.clone() {
-            if step.version >= self.current_schema_version {
+            // print version
+            println!("version: {} {}", step.version, self.current_schema_version);
+            if step.version > self.current_schema_version {
                 match step.s_type {
                     StepType::InitSetup => {
                         self.setup_initial_version()?;
@@ -164,6 +166,7 @@ impl CortexPostgres {
                                 hook((0, all_statements_len));
                             }
                         }
+                        self.set_version(&step.version)?;
                     }
                     StepType::Update => {
                         let mut transaction = self.connection.create_transaction()?;
@@ -171,9 +174,9 @@ impl CortexPostgres {
                             transaction.execute(ExecuteType::Command(
                                 PostgresStatementProducer::map(statement, action),
                             ))?;
-                        }
-                        for hook in &self.after_execute_hooks {
-                            hook((0, all_statements_len));
+                            for hook in &self.after_execute_hooks {
+                                hook((0, all_statements_len));
+                            }
                         }
 
                         transaction.commit()?;
@@ -219,18 +222,22 @@ impl CortexPostgres {
                             self.connection.execute(ExecuteType::Command(
                                 PostgresStatementProducer::map(statement, action),
                             ))?;
+                            for hook in &self.after_execute_hooks {
+                                hook((0, all_statements_len));
+                            }
                         }
+                        self.set_version(&step.version)?;
                     }
                     StepType::Update => {
                         for (statement, action) in &step.statements {
                             self.connection.execute(ExecuteType::Command(
                                 PostgresStatementProducer::map(statement, action),
                             ))?;
+                            for hook in &self.after_execute_hooks {
+                                hook((0, all_statements_len));
+                            }
                         }
                         self.set_version(&step.version)?;
-                        for hook in &self.after_execute_hooks {
-                            hook((0, all_statements_len));
-                        }
                     }
                 }
             }

@@ -28,6 +28,13 @@ pub struct ConnectionConfig<'a, T> {
     marker: std::marker::PhantomData<T>,
 }
 
+impl<'a, T> ConnectionConfig<'a, T> {
+    pub fn with_db(mut self, db: impl Into<&'a str>) -> Self {
+        self.database = db.into();
+        self
+    }
+}
+
 // create connect error type
 #[derive(Debug)]
 pub struct ConnectError {

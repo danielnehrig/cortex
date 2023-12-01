@@ -35,6 +35,18 @@ impl From<&Database> for Rc<str> {
     }
 }
 
+impl From<&Database> for String {
+    fn from(database: &Database) -> Self {
+        database.name.to_string()
+    }
+}
+
+impl<'a> From<&'a Database> for &'a str {
+    fn from(database: &'a Database) -> &'a str {
+        &database.name
+    }
+}
+
 impl From<Database> for Rc<str> {
     fn from(database: Database) -> Self {
         database.name.clone()
