@@ -1,7 +1,10 @@
+use std::rc::Rc;
+
 use crate::{
     connection::{postgres::Postgres, ExecuteError, ExecuteType},
-    db::producer::postgres::PostgresStatementProducer,
+    db::{cortex::ExecutionMode, producer::postgres::PostgresStatementProducer},
     objects::step::Step,
+    prelude::StepType,
 };
 
 #[derive(Clone)]
@@ -18,7 +21,15 @@ pub struct CortexPostgresConfig {
     pub plugins: Vec<PostgresPlugins>,
     /// The supported versions of the database
     pub supported_db_versions: (semver::Version, semver::Version),
+    /// The execution mode of cortex
+    pub execution_mode: ExecutionMode,
 }
+
+type StatementsLen = usize;
+type CurrentStatement = usize;
+type HookFnParam = (CurrentStatement, StatementsLen);
+type HookFn = dyn Fn(HookFnParam);
+type Hook = Rc<HookFn>;
 
 #[derive(Clone)]
 pub struct CortexPostgres {
@@ -30,6 +41,8 @@ pub struct CortexPostgres {
     config: CortexPostgresConfig,
     /// The current version of the database
     current_schema_version: semver::Version,
+    /// hooks to run
+    after_execute_hooks: Vec<Hook>,
 }
 
 impl CortexPostgres {
@@ -57,6 +70,7 @@ impl CortexPostgres {
             connection,
             current_schema_version: current_version,
             config,
+            after_execute_hooks: Vec::new(),
         }
     }
 
@@ -111,8 +125,15 @@ impl CortexPostgres {
         Ok(())
     }
 
-    /// Executes all steps that have been added to cortex
     pub fn execute(&mut self) -> Result<Self, ExecuteError> {
+        match self.config.execution_mode {
+            ExecutionMode::Optimistic => self.execute_as_optimistic(),
+            ExecutionMode::Transactional => self.execute_as_transaction(),
+        }
+    }
+
+    /// Executes all steps that have been added to cortex
+    fn execute_as_transaction(&mut self) -> Result<Self, ExecuteError> {
         if self.data.is_empty() {
             return Err(ExecuteError(
                 "no steps have been added to the producer".to_string(),
@@ -129,24 +150,33 @@ impl CortexPostgres {
                 "no steps to update everything on the latest version".to_string(),
             ));
         }
+        let all_statements_len = self.count_statements();
         for step in self.data.clone() {
             if step.version >= self.current_schema_version {
-                println!("executing step: {}", step.version);
                 match step.s_type {
-                    crate::objects::step::StepType::InitSetup => {
+                    StepType::InitSetup => {
                         self.setup_initial_version()?;
                         for (statement, action) in &step.statements {
                             self.connection.execute(ExecuteType::Command(
                                 PostgresStatementProducer::map(statement, action),
                             ))?;
+                            for hook in &self.after_execute_hooks {
+                                hook((0, all_statements_len));
+                            }
                         }
                     }
-                    crate::objects::step::StepType::Update => {
+                    StepType::Update => {
+                        let mut transaction = self.connection.create_transaction()?;
                         for (statement, action) in &step.statements {
-                            self.connection.execute(ExecuteType::Command(
+                            transaction.execute(ExecuteType::Command(
                                 PostgresStatementProducer::map(statement, action),
                             ))?;
                         }
+                        for hook in &self.after_execute_hooks {
+                            hook((0, all_statements_len));
+                        }
+
+                        transaction.commit()?;
                         self.set_version(&step.version)?;
                     }
                 }
@@ -157,6 +187,67 @@ impl CortexPostgres {
             connection: self.connection.clone(),
             current_schema_version: self.current_schema_version.clone(),
             config: self.config.clone(),
+            after_execute_hooks: Vec::new(),
         })
+    }
+
+    /// Executes all steps that have been added to cortex
+    fn execute_as_optimistic(&mut self) -> Result<Self, ExecuteError> {
+        if self.data.is_empty() {
+            return Err(ExecuteError(
+                "no steps have been added to the producer".to_string(),
+            ));
+        }
+        if self
+            .data
+            .iter()
+            .filter(|step| step.version >= self.current_schema_version)
+            .count()
+            == 0
+        {
+            return Err(ExecuteError(
+                "no steps to update everything on the latest version".to_string(),
+            ));
+        }
+        let all_statements_len = self.count_statements();
+        for step in self.data.clone() {
+            if step.version >= self.current_schema_version {
+                match step.s_type {
+                    StepType::InitSetup => {
+                        self.setup_initial_version()?;
+                        for (statement, action) in &step.statements {
+                            self.connection.execute(ExecuteType::Command(
+                                PostgresStatementProducer::map(statement, action),
+                            ))?;
+                        }
+                    }
+                    StepType::Update => {
+                        for (statement, action) in &step.statements {
+                            self.connection.execute(ExecuteType::Command(
+                                PostgresStatementProducer::map(statement, action),
+                            ))?;
+                        }
+                        self.set_version(&step.version)?;
+                        for hook in &self.after_execute_hooks {
+                            hook((0, all_statements_len));
+                        }
+                    }
+                }
+            }
+        }
+        Ok(Self {
+            data: Vec::new(),
+            connection: self.connection.clone(),
+            current_schema_version: self.current_schema_version.clone(),
+            config: self.config.clone(),
+            after_execute_hooks: Vec::new(),
+        })
+    }
+
+    fn count_statements(&self) -> usize {
+        self.data
+            .iter()
+            .map(|step| step.statements.len())
+            .sum::<usize>()
     }
 }

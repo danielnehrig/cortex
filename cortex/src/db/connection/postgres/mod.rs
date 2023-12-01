@@ -37,7 +37,29 @@ impl Default for ConnectionConfig<'_, Postgres> {
 #[derive(Clone)]
 /// Postgres connection
 /// not thread safe only used to create the db layout with cortex
-pub struct Postgres(Rc<RefCell<Client>>);
+pub struct Postgres(pub Rc<RefCell<Client>>);
+
+pub struct PostgresTransaction<'a>(pub postgres::Transaction<'a>);
+
+impl<'a> PostgresTransaction<'a> {
+    pub fn execute(&mut self, data: ExecuteType) -> Result<(), ExecuteError> {
+        match data {
+            ExecuteType::Command(command) => {
+                println!("executing command: {}", command);
+                return self
+                    .0
+                    .batch_execute(command.as_str())
+                    .map_err(|e| ExecuteError(format!("{} {}", command, e)));
+            }
+            ExecuteType::Driver(_, _) => panic!("c driver based execution not supported"),
+        }
+    }
+
+    pub fn commit(self) -> Result<(), ExecuteError> {
+        // Check if this is the only reference to the transaction
+        self.0.commit().map_err(|e| ExecuteError(e.to_string()))
+    }
+}
 
 impl Postgres {
     /// create a new connection
@@ -51,6 +73,15 @@ impl Postgres {
 
     pub fn get_client(&mut self) -> RefMut<Client> {
         self.0.borrow_mut()
+    }
+
+    pub fn create_transaction(&mut self) -> Result<PostgresTransaction, ExecuteError> {
+        let client = Rc::get_mut(&mut self.0).unwrap();
+        let transaction = client
+            .get_mut()
+            .transaction()
+            .map_err(|e| ExecuteError(e.to_string()))?;
+        Ok(PostgresTransaction(transaction))
     }
 
     /// execute a command

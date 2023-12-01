@@ -28,10 +28,11 @@ fn main() {
         StepType::Update,
         semver::Version::new(0, 0, 3),
     )
-    .add_statement(&db, DbAction::Drop);
+    .add_statement(&orders, DbAction::Drop);
     let client_conf = ConnectionConfig::<Postgres>::default();
     let cortex_conf = CortexPostgresConfig {
         plugins: vec![PostgresPlugins::Postgis, PostgresPlugins::Timescale],
+        execution_mode: ExecutionMode::Transactional,
         supported_db_versions: (
             semver::Version::new(15, 0, 0),
             semver::Version::new(16, 0, 0),

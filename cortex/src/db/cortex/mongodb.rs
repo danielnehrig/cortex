@@ -2,14 +2,9 @@ use mongodb::options::TransactionOptions;
 
 use crate::{
     connection::{mongodb::Mongo, ExecuteError, ExecuteType},
+    db::cortex::ExecutionMode,
     objects::step::Step,
 };
-
-#[derive(Debug)]
-pub enum ExecutionMode {
-    Optimistic,
-    Transactional,
-}
 
 #[derive(Debug)]
 pub struct CortexMongoConfig {
