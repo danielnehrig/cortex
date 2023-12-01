@@ -3,8 +3,12 @@ use cortex::prelude::*;
 #[cfg(feature = "postgres")]
 fn main() {
     let db = Database::new("testo");
-    let users = Table::new("users").add_prop(("id", PropType::Int, None));
-    let orders = Table::new("orders").add_prop(("id", PropType::Int, None));
+    let users = Table::new("users")
+        .add_prop(("id", PropType::Int, None))
+        .on_db(&db);
+    let orders = Table::new("orders")
+        .add_prop(("id", PropType::Int, None))
+        .on_db(&db);
     let init = Step::new(
         "Init Schema",
         StepType::InitSetup,

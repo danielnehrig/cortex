@@ -105,8 +105,8 @@ impl Table {
     ///   .on_db("db");
     ///   assert_eq!(table.database.unwrap(), "db".into());
     /// ```
-    pub fn on_db(mut self, db: &str) -> Self {
-        self.database = Some(Rc::from(db));
+    pub fn on_db(mut self, db: impl Into<Rc<str>>) -> Self {
+        self.database = Some(db.into());
         self
     }
 

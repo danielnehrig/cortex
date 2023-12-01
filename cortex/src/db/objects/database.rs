@@ -28,3 +28,15 @@ impl From<&Database> for Statement {
         Statement::Database(database.clone())
     }
 }
+
+impl From<&Database> for Rc<str> {
+    fn from(database: &Database) -> Self {
+        database.name.clone()
+    }
+}
+
+impl From<Database> for Rc<str> {
+    fn from(database: Database) -> Self {
+        database.name.clone()
+    }
+}
