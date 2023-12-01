@@ -97,8 +97,7 @@ impl MongodbStatementProducer {
                 .map_err(|e| {
                     ExecuteError(format!(
                         "failed to create collection: {}\n{:#?}",
-                        e.to_string(),
-                        collection
+                        e, collection
                     ))
                 })?;
             Ok(())
@@ -108,8 +107,7 @@ impl MongodbStatementProducer {
                 .map_err(|e| {
                     ExecuteError(format!(
                         "failed to create collection: {}\n{:#?}",
-                        e.to_string(),
-                        collection
+                        e, collection
                     ))
                 })?;
             Ok(())

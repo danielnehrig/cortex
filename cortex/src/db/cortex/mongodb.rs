@@ -116,20 +116,14 @@ impl CortexMongo {
         for step in self.data {
             if step.version >= self.current_schema_version {
                 let mut session = self.connection.0.start_session(None).await.map_err(|e| {
-                    ExecuteError(format!(
-                        "failed to start session for mongodb: {}",
-                        e.to_string()
-                    ))
+                    ExecuteError(format!("failed to start session for mongodb: {}", e))
                 })?;
                 let transaction_options = TransactionOptions::builder().build();
                 session
                     .start_transaction(transaction_options)
                     .await
                     .map_err(|e| {
-                        ExecuteError(format!(
-                            "failed to start transaction for mongodb: {}",
-                            e.to_string()
-                        ))
+                        ExecuteError(format!("failed to start transaction for mongodb: {}", e))
                     })?;
                 for statement in step.statements {
                     self.connection
@@ -140,10 +134,7 @@ impl CortexMongo {
                         .await?;
                 }
                 session.commit_transaction().await.map_err(|e| {
-                    ExecuteError(format!(
-                        "failed to commit transaction for mongodb: {}",
-                        e.to_string()
-                    ))
+                    ExecuteError(format!("failed to commit transaction for mongodb: {}", e))
                 })?;
             }
         }
