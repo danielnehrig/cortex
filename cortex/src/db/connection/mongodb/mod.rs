@@ -14,8 +14,8 @@ impl ConnectionConfig<'_, Mongo> {
         // this is wont allow transaction since no replica set
         // mongodb://root:example@localhost:27017/admin?authSource=admin&retryWrites=true
         format!(
-            "mongodb://{}:{}@{}:{}/admin?authSource=admin&retryWrites=true",
-            self.username, self.password, self.host, self.port
+            "mongodb://{}:{}@{}:{}/{}?authSource=admin&retryWrites=true",
+            self.username, self.password, self.host, self.port, self.database
         )
     }
 }
@@ -27,7 +27,7 @@ impl Default for ConnectionConfig<'_, Mongo> {
             password: "example",
             host: "localhost",
             port: 27017,
-            database: "test",
+            database: "default",
             marker: std::marker::PhantomData,
             path: None,
         }

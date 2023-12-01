@@ -29,38 +29,67 @@ impl MongodbStatementProducer {
     ) -> Result<(), ExecuteError> {
         let db = client.database(collection.database.as_ref().expect("database not set"));
         let schema = doc! {
-            "validator": {
-                "$jsonSchema": {
-                    "bsonType": "object",
-                    "required": collection.props.iter().map(|p| p.name.to_string()).collect::<Vec<String>>(),
-                    "properties": collection.props.iter().map(|p| {
-                        let t = match p.t_type {
-                            PropType::Text => "string",
+            "$jsonSchema": doc! {
+                "bsonType": "object",
+                "required": collection.props.iter().map(|p| p.name.to_string()).collect::<Vec<String>>(),
+                // create multiple documents from props iter
+                "properties": collection.props.iter().fold(doc! {}, |mut acc, p| {
+                    let mut prop = doc! {
+                        "bsonType": match p.t_type {
                             PropType::Int => "int",
                             PropType::SmallInt => "int",
                             PropType::BigInt => "int",
                             PropType::Double => "double",
-                            PropType::Bool => "bool",
-                            PropType::Date => "date",
                             PropType::Timestamp => "timestamp",
-                        };
-                        let prop = doc! {
-                            "bsonType": t,
-                        };
-                        // no annotations for mongodb
-                        let prop = doc! {
-                            p.name.to_string(): prop
-                        };
-                        prop
-
-                    }).collect::<Vec<_>>()
-                }
+                            PropType::Text => "string",
+                            PropType::Date => "date",
+                            PropType::Bool => "bool",
+                        },
+                        "title": p.name.to_string(),
+                    };
+                    if let Some(annotation) = &p.annotation {
+                        match annotation {
+                            PropAnnotation::PrimaryKey => {
+                                prop.insert("description", "primary key".to_string());
+                                prop.insert("uniqueItems", true);
+                            }
+                            PropAnnotation::Unique => {
+                                prop.insert("description", "unique".to_string());
+                                prop.insert("uniqueItems", true);
+                            }
+                            PropAnnotation::NotNull => {
+                                prop.insert("description", "not null".to_string());
+                                prop.insert("uniqueItems", true);
+                            }
+                            PropAnnotation::Default => {
+                                prop.insert("description", "default".to_string());
+                                prop.insert("uniqueItems", true);
+                            }
+                            PropAnnotation::Check => {
+                                prop.insert("description", "check".to_string());
+                                prop.insert("uniqueItems", true);
+                            }
+                            PropAnnotation::Foreign => {
+                                prop.insert("description", "foreign".to_string());
+                                prop.insert("uniqueItems", true);
+                            }
+                            PropAnnotation::Constraint(_) => {
+                                prop.insert("description", "constraint".to_string());
+                                prop.insert("uniqueItems", true);
+                            }
+                            PropAnnotation::Empty => {
+                                prop.insert("description", "empty".to_string());
+                                prop.insert("uniqueItems", true);
+                            }
+                        }
+                    }
+                    acc.insert(p.name.to_string(), prop);
+                    acc
+                }),
             }
         };
 
-        let collection_options = CreateCollectionOptions::builder()
-            .validator(doc! { "$jsonSchema": schema })
-            .build();
+        let collection_options = CreateCollectionOptions::builder().validator(schema).build();
 
         if let Some(session) = session {
             db.create_collection_with_session(&collection.name, collection_options, session)

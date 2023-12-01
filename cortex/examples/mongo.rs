@@ -18,14 +18,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let users: Table = Table::new("users")
         .add_props_as_slice(&[("id", PropType::Int, None)])
-        .on_db("test");
+        .on_db("default");
     let orders: Table = Table::new("orders")
         .add_props_as_slice(&[
             ("id", PropType::Int, None),
             ("user_id", PropType::Int, None),
             ("order_date", PropType::Date, None),
         ])
-        .on_db("admin");
+        .on_db("default");
     let db = Database::new("test");
     let data = Step::new(
         "Init Schema",
