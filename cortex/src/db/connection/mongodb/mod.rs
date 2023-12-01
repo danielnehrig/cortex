@@ -11,9 +11,11 @@ use crate::{
 
 impl ConnectionConfig<'_, Mongo> {
     pub fn get_uri(&self) -> String {
+        // this is wont allow transaction since no replica set
+        // mongodb://root:example@localhost:27017/admin?authSource=admin&retryWrites=true
         format!(
-            "mongodb://{}:{}@{}:{}/{}",
-            self.username, self.password, self.host, self.port, self.database
+            "mongodb://{}:{}@{}:{}/admin?authSource=admin&retryWrites=true",
+            self.username, self.password, self.host, self.port
         )
     }
 }
@@ -35,10 +37,10 @@ impl Default for ConnectionConfig<'_, Mongo> {
 pub struct Mongo(pub Client);
 
 impl Mongo {
-    pub fn execute(
+    pub async fn execute(
         &mut self,
         data: ExecuteType,
-        session: &mut ClientSession,
+        session: Option<&mut ClientSession>,
     ) -> Result<(), ExecuteError> {
         match data {
             ExecuteType::Command(_) => {
@@ -47,6 +49,7 @@ impl Mongo {
             ExecuteType::Driver(statement, action) => match statement {
                 Statement::Table(t) => {
                     MongodbStatementProducer::collection_statement((&self.0, session), &t, &action)
+                        .await
                 }
                 Statement::Database(_) => {
                     // MongodbStatementProducer::database_statement(&self.0, &d, &action)
@@ -60,6 +63,8 @@ impl Mongo {
     #[cfg(feature = "async")]
     pub async fn new(config: ConnectionConfig<'_, Mongo>) -> mongodb::error::Result<Self> {
         // Replace the placeholder with your Atlas connection string
+
+        use mongodb::bson::doc;
         let uri = config.get_uri();
         let mut client_options = ClientOptions::parse(uri).await?;
 
@@ -71,11 +76,11 @@ impl Mongo {
         let client = Client::with_options(client_options)?;
 
         // Send a ping to confirm a successful connection
-        // client
-        // .database("admin")
-        // .run_command(doc! {"ping": 1}, None)
-        // .await?;
-        // println!("Pinged your deployment. You successfully connected to MongoDB!");
+        client
+            .database("admin")
+            .run_command(doc! {"ping": 1}, None)
+            .await?;
+        println!("Pinged your deployment. You successfully connected to MongoDB!");
 
         Ok(Self(client))
     }

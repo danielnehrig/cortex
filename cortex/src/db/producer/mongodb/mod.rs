@@ -1,6 +1,5 @@
 use mongodb::{bson::doc, ClientSession};
 use mongodb::{options::CreateCollectionOptions, Client};
-use tokio::runtime::Runtime;
 
 use crate::{
     connection::ExecuteError,
@@ -23,8 +22,8 @@ impl MongodbStatementProducer {
         unimplemented!("mongodb does not require explicit database creation")
     }
 
-    pub(crate) fn collection_statement(
-        (client, session): (&Client, &mut ClientSession),
+    pub(crate) async fn collection_statement(
+        (client, session): (&Client, Option<&mut ClientSession>),
         collection: &Table,
         _action: &DbAction,
     ) -> Result<(), ExecuteError> {
@@ -45,27 +44,51 @@ impl MongodbStatementProducer {
                             PropType::Date => "date",
                             PropType::Timestamp => "timestamp",
                         };
-                        let a = table_annotation_to_db(p);
-                        format!("{} {} {}", p.name, t, a)
-                    }).collect::<Vec<String>>().join(", ")
+                        let prop = doc! {
+                            "bsonType": t,
+                        };
+                        // no annotations for mongodb
+                        let prop = doc! {
+                            p.name.to_string(): prop
+                        };
+                        prop
+
+                    }).collect::<Vec<_>>()
                 }
             }
         };
 
-        let rt = Runtime::new().unwrap();
         let collection_options = CreateCollectionOptions::builder()
             .validator(doc! { "$jsonSchema": schema })
             .build();
 
-        rt.block_on(async {
+        if let Some(session) = session {
             db.create_collection_with_session(&collection.name, collection_options, session)
                 .await
-                .map_err(|e| ExecuteError(e.to_string()))
-        })?;
-        Ok(())
+                .map_err(|e| {
+                    ExecuteError(format!(
+                        "failed to create collection: {}\n{:#?}",
+                        e.to_string(),
+                        collection
+                    ))
+                })?;
+            Ok(())
+        } else {
+            db.create_collection(&collection.name, collection_options)
+                .await
+                .map_err(|e| {
+                    ExecuteError(format!(
+                        "failed to create collection: {}\n{:#?}",
+                        e.to_string(),
+                        collection
+                    ))
+                })?;
+            Ok(())
+        }
     }
 }
 
+#[allow(dead_code)]
 fn table_annotation_to_db(prop: &TableProp) -> String {
     match &prop.annotation.clone() {
         Some(p) => {
