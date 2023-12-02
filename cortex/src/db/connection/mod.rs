@@ -1,4 +1,5 @@
 use crate::objects::statement::{DbAction, Statement};
+use thiserror::Error;
 
 #[cfg(feature = "mongodb")]
 pub mod mongodb;
@@ -35,28 +36,41 @@ impl<'a, T> ConnectionConfig<'a, T> {
     }
 }
 
-// create connect error type
-#[derive(Debug)]
-pub struct ConnectError {
-    pub message: String,
-}
-
-impl ConnectError {
-    pub fn new(message: String) -> Self {
-        ConnectError { message }
-    }
-}
-
 pub enum ExecuteType {
     Command(String),
     Driver(Statement, DbAction),
 }
 
-#[derive(Debug)]
-pub struct ExecuteError(pub String);
-
-impl std::fmt::Display for ExecuteError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "failed to execute query\n {}", self.0)
-    }
+#[derive(Error, Debug)]
+pub enum ConnectionError {
+    #[error("Database connection error: {0}")]
+    ConnectError(#[from] ConnectError),
+    #[error("Database execution error: {0}")]
+    ExecuteError(#[from] ExecuteError),
+    #[error("Database transaction error: {0}")]
+    TransactionError(#[from] TransactionError),
+    #[error("Database commit error: {0}")]
+    CommitError(#[from] CommitError),
+    #[error("Database query error: {0}")]
+    QueryError(#[from] QueryError),
 }
+
+#[derive(Error, Debug)]
+#[error("failed to connect to database\n{0}")]
+pub struct ConnectError(pub String);
+
+#[derive(Error, Debug)]
+#[error("Query execution failed:\n  Query: {0}\n  Error: {1}")]
+pub struct ExecuteError(pub String, pub String);
+
+#[derive(Error, Debug)]
+#[error("failed to execute query {0}")]
+pub struct QueryError(pub String);
+
+#[derive(Error, Debug)]
+#[error("failed to start transaction {0}")]
+pub struct TransactionError(pub String);
+
+#[derive(Error, Debug)]
+#[error("failed to commit {0}")]
+pub struct CommitError(pub String);

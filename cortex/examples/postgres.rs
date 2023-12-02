@@ -1,7 +1,8 @@
+use anyhow::Result;
 use cortex::prelude::*;
 
 #[cfg(feature = "postgres")]
-fn main() {
+fn main() -> Result<()> {
     let ts_db = Database::new("timeseries");
     let config_db = Database::new("config");
     let sales_db = Database::new("sales");
@@ -66,29 +67,26 @@ fn main() {
         ),
     };
 
-    let global_connection = Postgres::new(global_connection_config).expect("to connect to db");
+    let global_connection = Postgres::new(global_connection_config)?;
     let _ = CortexPostgres::new(global_connection, cortex_conf.clone())
         .add_step(global_db_step)
-        .execute()
-        .expect("execute to work");
+        .execute()?;
 
-    let ts_connection = Postgres::new(ts_connection_config).expect("to connect to db");
-    let config_connection = Postgres::new(config_connection_config).expect("to connect to db");
-    let sales_connection = Postgres::new(sales_connection_config).expect("to connect to db");
+    let ts_connection = Postgres::new(ts_connection_config)?;
+    let config_connection = Postgres::new(config_connection_config)?;
+    let sales_connection = Postgres::new(sales_connection_config)?;
 
     let _ = CortexPostgres::new(ts_connection, cortex_conf.clone())
         .add_step(empty_init.clone())
         .add_step(data_db_step)
-        .execute()
-        .expect("execute to work");
+        .execute()?;
     let _ = CortexPostgres::new(config_connection, cortex_conf.clone())
         .add_step(empty_init.clone())
         .add_steps(conf_db_steps)
-        .execute()
-        .expect("execute to work");
+        .execute()?;
     let _ = CortexPostgres::new(sales_connection, cortex_conf)
         .add_step(empty_init)
         .add_steps(sales_db_steps)
-        .execute()
-        .expect("execute to work");
+        .execute()?;
+    Ok(())
 }

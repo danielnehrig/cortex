@@ -95,20 +95,20 @@ impl MongodbStatementProducer {
             db.create_collection_with_session(&collection.name, collection_options, session)
                 .await
                 .map_err(|e| {
-                    ExecuteError(format!(
-                        "failed to create collection: {}\n{:#?}",
-                        e, collection
-                    ))
+                    ExecuteError(
+                        format!("failed to create collection: {}\n{:#?}", e, collection),
+                        collection.database.clone().unwrap_or("".into()).to_string(),
+                    )
                 })?;
             Ok(())
         } else {
             db.create_collection(&collection.name, collection_options)
                 .await
                 .map_err(|e| {
-                    ExecuteError(format!(
-                        "failed to create collection: {}\n{:#?}",
-                        e, collection
-                    ))
+                    ExecuteError(
+                        format!("failed to create collection: {}\n{:#?}", e, collection),
+                        collection.database.clone().unwrap_or("".into()).to_string(),
+                    )
                 })?;
             Ok(())
         }
