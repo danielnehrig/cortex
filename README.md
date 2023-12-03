@@ -33,41 +33,38 @@ cortex = { git = "https://github.com/danielnehrig/cortex" }
 Define and create a schema:
 
 ```rust
-use cortex::{
-    objects::{
-        statement::Statement,
-        step::{Step, StepType},
-        table::{PropType, Table, TableProp},
-    },
-    producer::PostgresStatementProducer,
-};
+use cortex::prelude::*;
 
-fn main() {
-    let users = Table::<PostgresStatementProducer>::new("users").add_prop(TableProp::new(
-        "id",
-        PropType::Int,
-        None,
-    ));
-    let orders = Table::new("orders").add_prop(TableProp::new("id", PropType::Int, None));
-    let data = Step::new("Init Schema", StepType::Update)
-        .add_statement(Statement::Create(&users))
-        .add_statement(Statement::Create(&orders))
-        .add_statement(Statement::Drop(&users));
-    println!("{}", data);
-}
+let users = Table::new("users").add_prop(("id", PropType::Int, None));
+let orders = Table::new("orders").add_prop(("id", PropType::Int, None));
+let db = Database::new("test");
+let data = Step::new("Init Schema", StepType::Update, semver::Version::new(0, 0, 1))
+    .add_statement(Statement::Database(&db, DbAction::Create))
+    .add_statement(Statement::Table(&users, DbAction::Create))
+    .add_statement(Statement::Table(&orders, DbAction::Create))
+    .add_statement(Statement::Table(&users, DbAction::Drop));
+let client_conf = ConnectionConfig::<Postgres>::default();
+let connection = Postgres::new(client_conf).expect("to connect to db");
+let cortex_conf = CortexPostgresConfig {
+    plugins: vec![PostgresPlugins::Postgis, PostgresPlugins::Timescale],
+    execution_mode: ExecutionMode::Transactional,
+    supported_db_versions: (
+        semver::Version::new(15, 0, 0),
+        semver::Version::new(16, 0, 0),
+    ),
+};
+let producer = CortexPostgres::new(connection, cortex_conf).add_step(data).execute();
 ```
 
 ## Extend `cortex` to Other Databases 🌍
 
-Simply implement these traits for your database:
-and take a look at the example of the `PostgresStatementProducer`
+Implement:
+- `CortexSomeDb` struct
+- `SomeDbStatementProducer` struct
+- `Connection` struct
 
-```rust
-impl DatabaseSpeicifics for SomeDatabaseStatementProducer {}
-impl CreateableObject for Table<'_, SomeDatabaseStatementProducer> {}
-impl DropableObject for Table<'_, SomeDatabaseStatementProducer> {}
-impl<'a> Display for Table<'a, SomeDatabaseStatementProducer> {}
-```
+see `cortex`, `producer` and `connection` folder for examples.
+
 
 ## Use Cases 💼
 

@@ -1,14 +1,20 @@
 use mongodb::{
     options::{ClientOptions, ServerApi, ServerApiVersion},
-    Client,
+    Client, ClientSession,
 };
 
-use crate::db::connection::ConnectionConfig;
+use crate::{
+    connection::{ExecuteError, ExecuteType},
+    db::{connection::ConnectionConfig, producer::mongodb::MongodbStatementProducer},
+    objects::statement::Statement,
+};
 
 impl ConnectionConfig<'_, Mongo> {
     pub fn get_uri(&self) -> String {
+        // this is wont allow transaction since no replica set
+        // mongodb://root:example@localhost:27017/admin?authSource=admin&retryWrites=true
         format!(
-            "mongodb://{}:{}@{}:{}/{}",
+            "mongodb://{}:{}@{}:{}/{}?authSource=admin&retryWrites=true",
             self.username, self.password, self.host, self.port, self.database
         )
     }
@@ -21,19 +27,44 @@ impl Default for ConnectionConfig<'_, Mongo> {
             password: "example",
             host: "localhost",
             port: 27017,
-            database: "test",
+            database: "default",
             marker: std::marker::PhantomData,
             path: None,
         }
     }
 }
 
-pub struct Mongo(Client);
+pub struct Mongo(pub Client);
 
 impl Mongo {
+    pub async fn execute(
+        &mut self,
+        data: ExecuteType,
+        session: Option<&mut ClientSession>,
+    ) -> Result<(), ExecuteError> {
+        match data {
+            ExecuteType::Command(_) => {
+                panic!("mongodb does not work like sql we can not execute command directly afaik")
+            }
+            ExecuteType::Driver(statement, action) => match statement {
+                Statement::Table(t) => {
+                    MongodbStatementProducer::collection_statement((&self.0, session), &t, &action)
+                        .await
+                }
+                Statement::Database(_) => {
+                    // MongodbStatementProducer::database_statement(&self.0, &d, &action)
+                    // do nothing
+                    Ok(())
+                }
+            },
+        }
+    }
+
     #[cfg(feature = "async")]
     pub async fn new(config: ConnectionConfig<'_, Mongo>) -> mongodb::error::Result<Self> {
         // Replace the placeholder with your Atlas connection string
+
+        use mongodb::bson::doc;
         let uri = config.get_uri();
         let mut client_options = ClientOptions::parse(uri).await?;
 
@@ -45,25 +76,22 @@ impl Mongo {
         let client = Client::with_options(client_options)?;
 
         // Send a ping to confirm a successful connection
-        // client
-        // .database("admin")
-        // .run_command(doc! {"ping": 1}, None)
-        // .await?;
-        // println!("Pinged your deployment. You successfully connected to MongoDB!");
+        client
+            .database("admin")
+            .run_command(doc! {"ping": 1}, None)
+            .await?;
+        println!("Pinged your deployment. You successfully connected to MongoDB!");
 
         Ok(Self(client))
     }
 
     #[cfg(feature = "async")]
-    pub async fn get_client(&self) -> mongodb::error::Result<Client> {
-        Ok(self.0.clone())
+    pub async fn get_client(&self) -> Client {
+        self.0.clone()
     }
 
     #[cfg(feature = "async")]
-    pub async fn get_database(
-        &self,
-        database_name: &str,
-    ) -> mongodb::error::Result<mongodb::Database> {
-        Ok(self.0.database(database_name))
+    pub async fn get_database(&self, database_name: &str) -> mongodb::Database {
+        self.0.database(database_name)
     }
 }

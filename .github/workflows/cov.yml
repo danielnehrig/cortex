@@ -4,7 +4,7 @@ name: coverage
 
 jobs:
   check:
-    name: Run Tarpulin and uploaad to codecov
+    name: Run Tarpulin and upload to codecov
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
