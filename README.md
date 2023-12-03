@@ -33,16 +33,7 @@ cortex = { git = "https://github.com/danielnehrig/cortex" }
 Define and create a schema:
 
 ```rust
-use cortex::{
-    connection::{postgres::Postgres, ConnectionConfig},
-    objects::{
-        database::Database,
-        statement::{Statement, DbAction},
-        step::{Step, StepType},
-        table::{PropType, Table, TableProp},
-    },
-    CortexPostgres,
-};
+use cortex::prelude::*;
 
 let users = Table::new("users").add_prop(("id", PropType::Int, None));
 let orders = Table::new("orders").add_prop(("id", PropType::Int, None));
@@ -54,7 +45,15 @@ let data = Step::new("Init Schema", StepType::Update, semver::Version::new(0, 0,
     .add_statement(Statement::Table(&users, DbAction::Drop));
 let client_conf = ConnectionConfig::<Postgres>::default();
 let connection = Postgres::new(client_conf).expect("to connect to db");
-let producer = CortexPostgres::new(connection).add_step(data);
+let cortex_conf = CortexPostgresConfig {
+    plugins: vec![PostgresPlugins::Postgis, PostgresPlugins::Timescale],
+    execution_mode: ExecutionMode::Transactional,
+    supported_db_versions: (
+        semver::Version::new(15, 0, 0),
+        semver::Version::new(16, 0, 0),
+    ),
+};
+let producer = CortexPostgres::new(connection, cortex_conf).add_step(data).execute();
 ```
 
 ## Extend `cortex` to Other Databases 🌍
