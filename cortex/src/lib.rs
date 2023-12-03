@@ -11,17 +11,8 @@
 //! ```toml
 //! cortex = { git = "https://github.com/danielnehrig/cortex", features = ["postgres"] }
 //! ```
-//! ```rust
-//! use cortex::{
-//!     connection::{postgres::Postgres, ConnectionConfig},
-//!     objects::{
-//!         database::Database,
-//!         statement::{Statement, DbAction},
-//!         step::{Step, StepType},
-//!         table::{PropType, Table, TableProp},
-//!     },
-//!     CortexPostgres, CortexPostgresConfig, PostgresPlugins,
-//! };
+//! ```no_run
+//!     use cortex::prelude::*;
 //!
 //!     // don't need to import table prop also can pass slice of tuples with table infos
 //!     let users = Table::new("users").add_prop(("id", PropType::Int, None));
@@ -32,16 +23,17 @@
 //!         .add_statement(&users, DbAction::Create)
 //!         .add_statement(&orders, DbAction::Create)
 //!         .add_statement(&users, DbAction::Drop);
-//!     let _client_conf = ConnectionConfig::<Postgres>::default();
-//!     let _cortex_conf = CortexPostgresConfig {
+//!     let client_conf = ConnectionConfig::<Postgres>::default();
+//!     let cortex_conf = CortexPostgresConfig {
 //!        plugins: vec![PostgresPlugins::Postgis, PostgresPlugins::Timescale],
+//!        execution_mode: ExecutionMode::Optimistic,
 //!        supported_db_versions: (
 //!            semver::Version::new(15, 0, 0),
 //!            semver::Version::new(16, 0, 0),
 //!        ),
 //!     };
-//!     // let connection = Postgres::new(_client_conf).expect("to connect to db");
-//!     // let producer = CortexPostgres::new(connection, _cortex_conf).add_step(data);
+//!     let connection = Postgres::new(client_conf).expect("to connect to db");
+//!     let producer = CortexPostgres::new(connection, cortex_conf).add_step(data).execute();
 //! ```
 //! to see more examples take a look into the examples folder
 //!

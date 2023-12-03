@@ -80,9 +80,10 @@ impl Postgres {
 
     pub fn create_transaction(&mut self) -> Result<PostgresTransaction, TransactionError> {
         let client = Rc::get_mut(&mut self.0).unwrap();
-        let transaction = client.get_mut().transaction().map_err(|e| {
-            TransactionError(format!("failed to create transaction: {}", e.to_string()))
-        })?;
+        let transaction = client
+            .get_mut()
+            .transaction()
+            .map_err(|e| TransactionError(format!("failed to create transaction: {}", e)))?;
         Ok(PostgresTransaction(transaction))
     }
 
