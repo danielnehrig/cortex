@@ -10,6 +10,11 @@ pub struct Database {
 
 impl Database {
     /// Create a new database with the given name.
+    /// # Example
+    /// ```
+    /// use cortex::objects::database::Database;
+    /// let database = Database::new("test");
+    /// ```
     pub fn new(name: &str) -> Self {
         Self {
             name: Rc::from(name),

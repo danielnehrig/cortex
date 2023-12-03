@@ -43,13 +43,38 @@ impl Step {
     }
 
     /// Add a statement to the step.
+    /// # Example
+    /// ```
+    /// use cortex::objects::step::{Step, StepType};
+    /// use cortex::objects::statement::Statement;
+    /// use cortex::objects::table::Table;
+    /// use cortex::objects::statement::DbAction;
+    ///
+    /// let table = Table::new("test");
+    /// let step = Step::new("test", StepType::Update, semver::Version::new(1, 0, 0))
+    ///    .add_statement(table, DbAction::Create);
+    /// ```
     pub fn add_statement(mut self, statement: impl Into<Statement>, action: DbAction) -> Self {
         self.statements.push((statement.into(), action));
         self
     }
 
-    pub fn add_statements(mut self, statements: Vec<(Statement, DbAction)>) -> Self {
-        self.statements.extend(statements);
+    /// Add multiple statements to the step.
+    /// # Example
+    /// ```
+    /// use cortex::objects::step::{Step, StepType};
+    /// use cortex::objects::statement::Statement;
+    /// use cortex::objects::table::Table;
+    /// use cortex::objects::statement::DbAction;
+    /// let data = vec![
+    ///    (Table::new("test"), DbAction::Create),
+    /// ];
+    /// let step = Step::new("test", StepType::Update, semver::Version::new(1, 0, 0))
+    ///    .add_statements(data);
+    /// ```
+    pub fn add_statements(mut self, statements: Vec<(impl Into<Statement>, DbAction)>) -> Self {
+        self.statements
+            .extend(statements.into_iter().map(|(s, a)| (s.into(), a)));
         self
     }
 }
