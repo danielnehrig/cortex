@@ -6,6 +6,7 @@ pub mod statement;
 pub mod step;
 pub mod table;
 pub mod user;
+pub mod views;
 
 pub mod prelude {
     pub use super::database::Database;

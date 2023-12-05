@@ -1,4 +1,7 @@
-use crate::objects::{database::Database, table::Table};
+use crate::{
+    objects::{database::Database, table::Table, user::User, views::View},
+    prelude::Role,
+};
 
 #[derive(Clone)]
 /// A database action is an action that is run on the database.
@@ -7,6 +10,8 @@ pub enum DbAction {
     Drop,
     Alter,
     Insert,
+    Grant,
+    Revoke,
 }
 
 #[derive(Clone)]
@@ -14,4 +19,7 @@ pub enum DbAction {
 pub enum Statement {
     Table(Table),
     Database(Database),
+    View(View),
+    User(User),
+    Role(Role),
 }

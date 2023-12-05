@@ -1,7 +1,11 @@
-use crate::objects::{
-    database::Database,
-    statement::{DbAction, Statement},
-    table::{PropAnnotation, PropType, Table, TableAnnotation, TableProp},
+use crate::{
+    objects::{
+        database::Database,
+        statement::{DbAction, Statement},
+        table::{PropAnnotation, PropType, Table, TableAnnotation, TableProp},
+        views::View,
+    },
+    prelude::{Role, User},
 };
 
 pub(crate) struct PostgresStatementProducer;
@@ -55,6 +59,63 @@ impl PostgresStatementProducer {
         match statement {
             Statement::Table(t) => PostgresStatementProducer::table_statement(t, action),
             Statement::Database(d) => PostgresStatementProducer::database_statement(d, action),
+            Statement::View(v) => PostgresStatementProducer::view_statement(v, action),
+            Statement::User(u) => PostgresStatementProducer::user_statement(u, action),
+            Statement::Role(r) => PostgresStatementProducer::role_statement(r, action),
+        }
+    }
+
+    fn role_statement(role: &Role, action: &DbAction) -> String {
+        match action {
+            DbAction::Create => {
+                format!("CREATE ROLE {};", role.name)
+            }
+            DbAction::Drop => format!("DROP ROLE IF EXISTS {};", role.name),
+            DbAction::Alter => panic!("altering a role is not supported"),
+            DbAction::Insert => panic!("inserting a role is not supported"),
+            DbAction::Grant => {
+                todo!()
+            }
+            DbAction::Revoke => todo!(),
+        }
+    }
+
+    fn view_statement(view: &View, action: &DbAction) -> String {
+        match action {
+            DbAction::Create => {
+                let props = view
+                    .props
+                    .iter()
+                    .map(|e| e.name.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                let from = view.from.join(", ");
+                let where_clause = view.where_clause.join(" AND ");
+                format!(
+                    "CREATE VIEW {} ({}) AS SELECT {} FROM {} WHERE {};",
+                    view.name, props, props, from, where_clause
+                )
+            }
+            DbAction::Drop => format!("DROP VIEW IF EXISTS {};", view.name),
+            DbAction::Alter => panic!("altering a view is not supported"),
+            DbAction::Insert => panic!("inserting a view is not supported"),
+            _ => panic!("granting and revoking a view is not supported"),
+        }
+    }
+
+    fn user_statement(user: &User, action: &DbAction) -> String {
+        match action {
+            DbAction::Create => {
+                let password = match &user.password {
+                    Some(p) => format!("PASSWORD '{}'", p),
+                    None => "".to_string(),
+                };
+                format!("CREATE USER {} {};", user.name, password)
+            }
+            DbAction::Drop => format!("DROP USER IF EXISTS {};", user.name),
+            DbAction::Alter => panic!("altering a user is not supported"),
+            DbAction::Insert => panic!("inserting a user is not supported"),
+            _ => panic!("granting and revoking a view is not supported"),
         }
     }
 
@@ -86,6 +147,7 @@ impl PostgresStatementProducer {
             DbAction::Drop => format!("DROP TABLE IF EXISTS {};", table.name),
             DbAction::Alter => panic!("altering a table is not supported"),
             DbAction::Insert => panic!("inserting a table is not supported"),
+            _ => panic!("granting and revoking a view is not supported"),
         }
     }
 
@@ -95,6 +157,7 @@ impl PostgresStatementProducer {
             DbAction::Drop => format!("DROP DATABASE {};", database.name),
             DbAction::Alter => panic!("altering a database is not supported"),
             DbAction::Insert => panic!("inserting a database is not supported"),
+            _ => panic!("granting and revoking a view is not supported"),
         }
     }
 }

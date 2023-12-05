@@ -1,4 +1,4 @@
-# cortex (WORK IN PROGRESS not useable yet) 🧠🗄️
+# cortex 🧠🗄️
 
 Easily create database schemas with a unified API for any supported database. Introducing `cortex`, a Rust library designed to simplify and unify database schema creation across multiple database platforms.
 
@@ -13,9 +13,11 @@ Easily create database schemas with a unified API for any supported database. In
 
 ## Features 🚀
 
-- **Supported Databases**: PostgreSQL, SQLite(TODO), MySQL(TODO), and more. Easily expand to others.
+- **Supported Databases**: PostgreSQL, MongoDB, and more to come. Easily expand to others.
 - **Schema Creation**: Define once, use anywhere. No more database-specific scripts.
 - **Validation**: Validate schemas against the selected database before application.
+- **Upgradeablility**: Ship products to any customer on any application / database schema version.
+- **Execution Modes**: Transactional commit execution mode and Optimistic executions.
 
 ## Getting Started 🛠️
 
@@ -104,10 +106,3 @@ We're excited about the journey ahead and welcome feedback, suggestions, and con
 ## License 📜
 
 `cortex` is licensed under the MIT license. Dive into the [LICENSE](./LICENSE) file for details.
-
-## TODO
-
-- cargo install cargo-llvm-cov
-- cargo install cargo-nextest
-- export RUSTFLAGS="-Cinstrument-coverage"
-- grcov . --binary-path ./target/llvm-cov-target/debug/deps -s . -t html --branch --ignore-not-existing --ignore '../*' --ignore "/*" -o target/coverage/html

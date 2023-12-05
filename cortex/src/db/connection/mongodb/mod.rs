@@ -14,8 +14,12 @@ impl ConnectionConfig<'_, Mongo> {
         // this is wont allow transaction since no replica set
         // mongodb://root:example@localhost:27017/admin?authSource=admin&retryWrites=true
         format!(
-            "mongodb://{}:{}@{}:{}/{}?authSource=admin&retryWrites=true",
-            self.username, self.password, self.host, self.port, self.database
+            "mongodb://{}:{}@{}/{}?{}",
+            self.username,
+            self.password,
+            self.host,
+            self.database,
+            self.additional.unwrap_or_default()
         )
     }
 }
@@ -23,13 +27,14 @@ impl ConnectionConfig<'_, Mongo> {
 impl Default for ConnectionConfig<'_, Mongo> {
     fn default() -> Self {
         ConnectionConfig {
-            username: "root",
-            password: "example",
+            username: "mongo",
+            password: "mongo",
             host: "localhost",
-            port: 27017,
+            port: 27017, // unused
             database: "default",
             marker: std::marker::PhantomData,
-            path: None,
+            path: Some("authSource=admin&retryWrites=true"),
+            additional: None,
         }
     }
 }
@@ -56,6 +61,9 @@ impl Mongo {
                     // do nothing
                     Ok(())
                 }
+                Statement::View(_) => unimplemented!(),
+                Statement::User(_) => unimplemented!(),
+                Statement::Role(_) => unimplemented!(),
             },
         }
     }
