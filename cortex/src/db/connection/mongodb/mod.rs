@@ -70,12 +70,11 @@ impl Mongo {
     }
 
     #[cfg(feature = "async")]
-    pub async fn new(config: ConnectionConfig<'_, Mongo>) -> mongodb::error::Result<Self> {
+    pub async fn new(config: impl Into<String>) -> mongodb::error::Result<Self> {
         // Replace the placeholder with your Atlas connection string
 
         use mongodb::bson::doc;
-        let uri = config.get_uri();
-        let mut client_options = ClientOptions::parse(uri).await?;
+        let mut client_options = ClientOptions::parse(config.into()).await?;
 
         // Set the server_api field of the client_options object to Stable API version 1
         let server_api = ServerApi::builder().version(ServerApiVersion::V1).build();

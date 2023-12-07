@@ -67,6 +67,33 @@ impl<'a, T> ConnectionConfig<'a, T> {
     }
 }
 
+impl From<ConnectionConfig<'_, postgres::Postgres>> for String {
+    fn from(config: ConnectionConfig<'_, postgres::Postgres>) -> Self {
+        format!(
+            "postgres://{}:{}@{}:{}/{}{}",
+            config.username,
+            config.password,
+            config.host,
+            config.port,
+            config.database,
+            config.path.unwrap_or_default()
+        )
+    }
+}
+
+impl From<ConnectionConfig<'_, mongodb::Mongo>> for String {
+    fn from(config: ConnectionConfig<'_, mongodb::Mongo>) -> Self {
+        format!(
+            "mongodb://{}:{}@{}/{}?{}",
+            config.username,
+            config.password,
+            config.host,
+            config.database,
+            config.additional.unwrap_or_default()
+        )
+    }
+}
+
 pub enum ExecuteType {
     Command(String),
     Driver(Statement, DbAction),

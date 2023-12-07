@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .add_statement(&users, DbAction::Create)
     .add_statement(&orders, DbAction::Create)
     .add_statement(&users, DbAction::Drop);
-    let client_conf = ConnectionConfig::default();
+    let client_conf = ConnectionConfig::<Mongo>::default();
     let mongo = Mongo::new(client_conf).await.expect("Failed to connect");
     let cortex_config = CortexMongoConfig {
         supported_db_versions: (semver::Version::new(0, 0, 1), semver::Version::new(0, 0, 1)),
