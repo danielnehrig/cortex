@@ -5,7 +5,7 @@ use crate::{
         table::{PropAnnotation, PropType, Table, TableAnnotation, TableProp},
         views::View,
     },
-    prelude::{Role, User},
+    prelude::{Role, Sequence, User},
 };
 
 pub(crate) struct PostgresStatementProducer;
@@ -62,6 +62,46 @@ impl PostgresStatementProducer {
             Statement::View(v) => PostgresStatementProducer::view_statement(v, action),
             Statement::User(u) => PostgresStatementProducer::user_statement(u, action),
             Statement::Role(r) => PostgresStatementProducer::role_statement(r, action),
+            Statement::Sequence(s) => PostgresStatementProducer::sequence_statement(s, action),
+        }
+    }
+
+    fn sequence_statement(sequence: &Sequence, action: &DbAction) -> String {
+        match action {
+            DbAction::Create => {
+                let start = match sequence.start {
+                    Some(s) => format!("START WITH {}", s),
+                    None => "".to_string(),
+                };
+                let increment = match sequence.increment {
+                    Some(i) => format!("INCREMENT BY {}", i),
+                    None => "".to_string(),
+                };
+                let min_value = match sequence.min_value {
+                    Some(m) => format!("MINVALUE {}", m),
+                    None => "".to_string(),
+                };
+                let max_value = match sequence.max_value {
+                    Some(m) => format!("MAXVALUE {}", m),
+                    None => "".to_string(),
+                };
+                let cache = match sequence.cache {
+                    Some(c) => format!("CACHE {}", c),
+                    None => "".to_string(),
+                };
+                let cycle = match sequence.cycle {
+                    Some(c) => format!("CYCLE {}", c),
+                    None => "".to_string(),
+                };
+                format!(
+                    "CREATE SEQUENCE {} {} {} {} {} {} {};",
+                    sequence.name, start, increment, min_value, max_value, cache, cycle
+                )
+            }
+            DbAction::Drop => format!("DROP SEQUENCE IF EXISTS {};", sequence.name),
+            DbAction::Alter => panic!("altering a sequence is not supported"),
+            DbAction::Insert => panic!("inserting a sequence is not supported"),
+            _ => panic!("granting and revoking a sequence is not supported"),
         }
     }
 

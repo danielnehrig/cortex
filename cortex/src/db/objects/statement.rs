@@ -1,6 +1,6 @@
 use crate::{
     objects::{database::Database, table::Table, user::User, views::View},
-    prelude::Role,
+    prelude::{Role, Sequence},
 };
 
 #[derive(Clone)]
@@ -22,4 +22,5 @@ pub enum Statement {
     View(View),
     User(User),
     Role(Role),
+    Sequence(Sequence),
 }

@@ -64,6 +64,7 @@ impl Mongo {
                 Statement::View(_) => unimplemented!(),
                 Statement::User(_) => unimplemented!(),
                 Statement::Role(_) => unimplemented!(),
+                Statement::Sequence(_) => unimplemented!(),
             },
         }
     }
