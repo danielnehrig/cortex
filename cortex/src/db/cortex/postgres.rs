@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{fmt::Display, rc::Rc};
 
 use crate::{
     connection::{postgres::Postgres, ConnectionError, ExecuteError, ExecuteType},
@@ -276,5 +276,21 @@ impl CortexPostgres {
             .iter()
             .map(|step| step.statements.len())
             .sum::<usize>()
+    }
+}
+
+impl Display for CortexPostgres {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut data = String::new();
+        for step in &self.data {
+            for (statement, action) in &step.statements {
+                data.push_str(&format!(
+                    "{}: {}",
+                    PostgresStatementProducer::map(statement, action),
+                    step.version
+                ));
+            }
+        }
+        write!(f, "{}", data)
     }
 }
