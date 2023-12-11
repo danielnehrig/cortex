@@ -24,7 +24,7 @@ pub struct TableProp {
     pub annotation: Option<PropAnnotation>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 /// PropType enum for defining the type of a property
 pub enum PropType {
     Int,
@@ -129,9 +129,9 @@ impl Table {
         mut self,
         props: &[(&str, PropType, Option<PropAnnotation>)],
     ) -> Self {
-        for (name, t_type, annotation) in props {
+        for (name, t_type, annotation) in props.iter() {
             self.props
-                .push(TableProp::new(name, t_type.clone(), annotation.clone()));
+                .push(TableProp::new(name, *t_type, annotation.clone()));
         }
         self
     }

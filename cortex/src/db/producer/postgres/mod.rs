@@ -67,6 +67,7 @@ impl PostgresStatementProducer {
         }
     }
 
+    #[allow(dead_code)]
     fn stored_procedure(stored_proc: &StoredProcedure, action: &DbAction) -> String {
         match action {
             DbAction::Create => {

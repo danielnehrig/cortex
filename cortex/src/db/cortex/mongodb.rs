@@ -37,6 +37,12 @@ impl CortexMongo {
         self
     }
 
+    pub fn add_steps(mut self, steps: Vec<Step>) -> Self {
+        self.data.extend(steps);
+        self.data.sort_by(|a, b| a.version.cmp(&b.version));
+        self
+    }
+
     pub fn clean(mut self) -> Self {
         self.data.clear();
         self

@@ -6,6 +6,7 @@ pub struct View {
     pub(crate) props: Vec<TableProp>,
     pub(crate) from: Vec<String>,
     pub(crate) where_clause: Vec<String>,
+    #[allow(dead_code)]
     pub(crate) db: Option<String>,
 }
 

@@ -3,10 +3,7 @@ use mongodb::{options::CreateCollectionOptions, Client};
 
 use crate::{
     connection::ExecuteError,
-    objects::{
-        statement::DbAction,
-        table::{PropAnnotation, PropType, Table},
-    },
+    objects::table::{PropAnnotation, PropType, Table},
 };
 
 pub struct MongodbStatementProducerCollection;
