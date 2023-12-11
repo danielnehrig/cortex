@@ -15,7 +15,6 @@ impl MongodbStatementProducerCollection {
     pub(super) async fn create_collection(
         (client, session): (&Client, Option<&mut ClientSession>),
         collection: &Table,
-        _action: &DbAction,
     ) -> Result<(), ExecuteError> {
         let db = client.database(collection.database.as_ref().expect("database not set"));
         let schema = doc! {

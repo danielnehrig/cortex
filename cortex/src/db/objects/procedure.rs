@@ -1,26 +1,25 @@
 #[derive(Debug, Clone)]
-pub struct StoredProcedure<'a, T> {
-    pub name: &'a str,
+pub struct StoredProcedure {
+    pub name: String,
     pub params: Vec<Parameter>,
-    pub returns: Vec<Parameter>,
+    pub returns: Option<Parameter>,
     pub body: String,
-    _marker: std::marker::PhantomData<T>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Parameter {
     pub name: String,
     pub data_type: String,
+    pub list: bool,
 }
 
-impl<'a, T> StoredProcedure<'a, T> {
-    pub fn new(name: &'a str) -> Self {
+impl StoredProcedure {
+    pub fn new(name: impl Into<String>) -> Self {
         Self {
-            name,
+            name: name.into(),
             params: Vec::new(),
-            returns: Vec::new(),
+            returns: None,
             body: String::new(),
-            _marker: std::marker::PhantomData,
         }
     }
 
@@ -29,7 +28,7 @@ impl<'a, T> StoredProcedure<'a, T> {
     }
 
     pub fn add_return(&mut self, param: Parameter) {
-        self.returns.push(param);
+        self.returns = Some(param);
     }
 
     pub fn set_body(&mut self, body: &str) {

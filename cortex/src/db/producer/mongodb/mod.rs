@@ -28,10 +28,7 @@ impl MongodbStatementProducer {
     ) -> Result<(), ExecuteError> {
         match action {
             DbAction::Create => {
-                MongodbStatementProducerCollection::create_collection(
-                    connection, collection, action,
-                )
-                .await
+                MongodbStatementProducerCollection::create_collection(connection, collection).await
             }
             DbAction::Drop => todo!(),
             DbAction::Alter => todo!(),
