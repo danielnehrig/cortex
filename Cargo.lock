@@ -216,6 +216,15 @@ dependencies = [
 [[package]]
 name = "cortex_connection"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "mongodb",
+ "postgres",
+ "postgres-types",
+ "sqlite",
+ "thiserror",
+ "tokio",
+]
 
 [[package]]
 name = "cortex_generation"

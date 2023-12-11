@@ -17,8 +17,6 @@ impl<'ast> Visit<'ast> for TableExtractor {
         let m_name = i.method.to_string();
         if let Some(name) = self.find_type_name(i) {
             if m_name == "add_prop" {
-                eprintln!("Found type: {:#?}", i);
-                // this is the param name
                 let param_name = if let Expr::Lit(lit) = i.args.first().unwrap() {
                     if let syn::Lit::Str(lit) = &lit.lit {
                         lit.value()
@@ -53,7 +51,6 @@ impl TableExtractor {
         loop {
             match current_expr {
                 Expr::Call(call) => {
-                    eprintln!("{:#?}", call);
                     if let Expr::Path(path) = &*call.func {
                         if path.path.segments.first().unwrap().ident != "Table" {
                             return None;
