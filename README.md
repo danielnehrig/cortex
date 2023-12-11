@@ -8,16 +8,20 @@ Easily create database schemas with a unified API for any supported database. In
 
 - **Unified API**: No need to learn different schema creation languages or tools for different databases.
 - **Flexibility**: Easily switch between databases or support multiple databases in a single product.
-- **Extensibility**: If a database isn't already supported, extend the library by implementing the required traits.
+- **Extensibility**: If a database isn't already supported, extend the library by implementing the required traits and structures.
 - **Product Evolution**: As your product grows and scales, your database needs might change. Whether you're migrating, supporting multiple deployments, or optimizing for specific use-cases, `cortex` makes it a breeze.
+- **Multiple Database Usage**: Based on your problem at hand you might have multiple problems to solve and not every database is designed to be good at all of them.
 
 ## Features 🚀
 
-- **Supported Databases**: PostgreSQL, MongoDB, and more to come. Easily expand to others.
+- **Supported Databases**: PostgreSQL, MongoDB, SQLite(TODO), MySQL(TODO), Microsoft(TODO), Oracle(TODO) and more to come. Easily expand to others.
 - **Schema Creation**: Define once, use anywhere. No more database-specific scripts.
 - **Validation**: Validate schemas against the selected database before application.
-- **Upgradeablility**: Ship products to any customer on any application / database schema version.
+- **Upgrade ability**: Ship products to any customer on any application / database schema version.
 - **Execution Modes**: Transactional commit execution mode and Optimistic executions.
+- **Code Generation**: Data structure generation out of tables, db functions / stored procedures API.
+- **Loss DB Control**: Your database is not abstracted away behind cortex you'll have fine grained control over the database.
+- **Simplistic**: If beginner, intermediate or advanced when it comes to databases cortex got your back.
 
 ## Getting Started 🛠️
 
@@ -92,6 +96,7 @@ At `cortex`, we're always looking to expand our capabilities and make schema man
 - **SQLite**: As one of the most used Embedded databases it's our goal as early as possible to ensure we support it.
 - **MongoDB**: As a leading NoSQL database, adding MongoDB support is high on our list. Stay tuned for more updates.
 - **Postgres**: Known for its robustness, we're actively working on integrating Postgres to extend `cortex`'s reach to more enterprise applications.
+- **MySQL**: todo
 
 ### Feature Enhancements ⚙️
 
