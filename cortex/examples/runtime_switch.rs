@@ -71,7 +71,6 @@ async fn main() {
         Db::Mongo => {
             let client_conf = ConnectionConfig::<Mongo>::default();
             let cortex_conf = cortex::CortexMongoConfig {
-                execution_mode: ExecutionMode::Optimistic,
                 supported_db_versions: (
                     semver::Version::new(15, 0, 0),
                     semver::Version::new(16, 0, 0),

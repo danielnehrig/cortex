@@ -11,7 +11,6 @@ use crate::{
 #[derive(Debug)]
 pub struct CortexMongoConfig {
     pub supported_db_versions: (semver::Version, semver::Version),
-    pub execution_mode: ExecutionMode,
 }
 
 pub struct CortexMongo {
@@ -57,15 +56,7 @@ impl CortexMongo {
         todo!()
     }
 
-    pub async fn execute(self) -> Result<Self, CortexError> {
-        match self.config.execution_mode {
-            ExecutionMode::Optimistic => self.execute_as_optimistic().await,
-            // requires mongodb replica set
-            ExecutionMode::Transactional => self.execute_as_transaction().await,
-        }
-    }
-
-    async fn execute_as_optimistic(mut self) -> Result<Self, CortexError> {
+    pub async fn execute(mut self) -> Result<Self, CortexError> {
         if self.data.is_empty() {
             return Err(StepValidationError(
                 "no steps have been added to the producer".to_string(),
@@ -82,13 +73,11 @@ impl CortexMongo {
                 "no steps to update everything on the latest version".to_string(),
             ))?;
         }
-        for step in self.data {
+        for step in self.data.clone() {
             if step.version > self.current_schema_version {
-                for statement in step.statements {
-                    self.connection
-                        .execute(ExecuteType::Driver(statement.0, statement.1), None)
-                        .await
-                        .map_err(ConnectionError::ExecuteError)?;
+                match step.mode {
+                    ExecutionMode::Optimistic => self.execute_as_optimistic(step).await?,
+                    ExecutionMode::Transactional => self.execute_as_transaction(step).await?,
                 }
             }
         }
@@ -100,55 +89,41 @@ impl CortexMongo {
         })
     }
 
-    async fn execute_as_transaction(mut self) -> Result<Self, CortexError> {
-        if self.data.is_empty() {
-            return Err(StepValidationError(
-                "no steps have been added to the producer".to_string(),
-            ))?;
+    async fn execute_as_optimistic(&mut self, step: Step) -> Result<(), CortexError> {
+        for statement in step.statements {
+            self.connection
+                .execute(ExecuteType::Driver(statement.0, statement.1), None)
+                .await
+                .map_err(ConnectionError::ExecuteError)?;
         }
-        if self
-            .data
-            .iter()
-            .filter(|step| step.version > self.current_schema_version)
-            .count()
-            == 0
-        {
-            return Err(SchemaVersionError(
-                "no steps to update everything on the latest version".to_string(),
-            ))?;
+        Ok(())
+    }
+
+    async fn execute_as_transaction(&mut self, step: Step) -> Result<(), CortexError> {
+        let mut session = self
+            .connection
+            .0
+            .start_session(None)
+            .await
+            .map_err(|e| ConnectionError::TransactionError(TransactionError(e.to_string())))?;
+        let transaction_options = TransactionOptions::builder().build();
+        session
+            .start_transaction(transaction_options)
+            .await
+            .map_err(|e| ConnectionError::TransactionError(TransactionError(e.to_string())))?;
+        for statement in step.statements {
+            self.connection
+                .execute(
+                    ExecuteType::Driver(statement.0, statement.1),
+                    Some(&mut session),
+                )
+                .await
+                .map_err(ConnectionError::ExecuteError)?;
         }
-        for step in self.data {
-            if step.version > self.current_schema_version {
-                let mut session = self.connection.0.start_session(None).await.map_err(|e| {
-                    ConnectionError::TransactionError(TransactionError(e.to_string()))
-                })?;
-                let transaction_options = TransactionOptions::builder().build();
-                session
-                    .start_transaction(transaction_options)
-                    .await
-                    .map_err(|e| {
-                        ConnectionError::TransactionError(TransactionError(e.to_string()))
-                    })?;
-                for statement in step.statements {
-                    self.connection
-                        .execute(
-                            ExecuteType::Driver(statement.0, statement.1),
-                            Some(&mut session),
-                        )
-                        .await
-                        .map_err(ConnectionError::ExecuteError)?;
-                }
-                session
-                    .commit_transaction()
-                    .await
-                    .map_err(|e| ConnectionError::CommitError(CommitError(e.to_string())))?;
-            }
-        }
-        Ok(Self {
-            data: Vec::new(),
-            connection: self.connection,
-            current_schema_version: self.current_schema_version.clone(),
-            config: self.config,
-        })
+        session
+            .commit_transaction()
+            .await
+            .map_err(|e| ConnectionError::CommitError(CommitError(e.to_string())))?;
+        Ok(())
     }
 }

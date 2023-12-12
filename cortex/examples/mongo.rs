@@ -27,7 +27,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mongo = Mongo::new(client_conf).await.expect("Failed to connect");
     let cortex_config = CortexMongoConfig {
         supported_db_versions: (semver::Version::new(0, 0, 1), semver::Version::new(0, 0, 1)),
-        execution_mode: ExecutionMode::Transactional,
     };
     let cortex = CortexMongo::new(mongo, cortex_config).add_step(data);
     _ = cortex.execute().await.expect("Failed to execute");
