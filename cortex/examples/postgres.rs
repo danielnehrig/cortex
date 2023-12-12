@@ -41,6 +41,7 @@ fn main() -> Result<()> {
         StepType::Update,
         semver::Version::new(0, 0, 2),
     )
+    .set_execution_mode(ExecutionMode::Transactional)
     .add_statement(&earnings, DbAction::Create)];
     let data_db_step = Step::new(
         "Timeseries Schema",
@@ -60,7 +61,6 @@ fn main() -> Result<()> {
     let sales_connection_config = ConnectionConfig::<Postgres>::default().with_db(&sales_db);
     let cortex_conf = CortexPostgresConfig {
         plugins: vec![PostgresPlugins::Postgis, PostgresPlugins::Timescale],
-        execution_mode: ExecutionMode::Transactional,
         supported_db_versions: (
             semver::Version::new(15, 0, 0),
             semver::Version::new(16, 0, 0),

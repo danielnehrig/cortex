@@ -57,7 +57,6 @@ async fn main() {
             let client_conf = ConnectionConfig::<Postgres>::default();
             let cortex_conf = cortex::CortexPostgresConfig {
                 plugins: vec![],
-                execution_mode: ExecutionMode::Optimistic,
                 supported_db_versions: (
                     semver::Version::new(15, 0, 0),
                     semver::Version::new(16, 0, 0),

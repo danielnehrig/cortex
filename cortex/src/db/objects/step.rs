@@ -1,6 +1,8 @@
 use std::rc::Rc;
 
-use crate::{db::objects::statement::Statement, objects::statement::DbAction};
+use crate::{
+    db::objects::statement::Statement, objects::statement::DbAction, prelude::ExecutionMode,
+};
 
 #[derive(Clone)]
 /// Steps are the main unit of work in the migration system.
@@ -20,6 +22,8 @@ pub struct Step {
     pub statements: Vec<(Statement, DbAction)>,
     /// The version of the step
     pub version: semver::Version,
+    /// Execution Mode
+    pub mode: ExecutionMode,
 }
 
 #[derive(Default, Debug, Clone)]
@@ -39,7 +43,21 @@ impl Step {
             s_type,
             statements: Vec::new(),
             version,
+            mode: ExecutionMode::Optimistic,
         }
+    }
+
+    /// Set the execution mode of the step.
+    /// # Example
+    /// ```
+    /// use cortex::objects::step::{Step, StepType};
+    /// use cortex::prelude::ExecutionMode;
+    /// let step = Step::new("test", StepType::Update, semver::Version::new(1, 0, 0))
+    ///   .set_execution_mode(ExecutionMode::Optimistic);
+    /// ```
+    pub fn set_execution_mode(mut self, mode: ExecutionMode) -> Self {
+        self.mode = mode;
+        self
     }
 
     /// Add a statement to the step.

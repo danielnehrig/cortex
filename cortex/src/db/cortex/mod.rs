@@ -13,9 +13,13 @@ pub mod prelude {
     pub use super::ExecutionMode;
 }
 
-#[derive(Clone, Debug)]
+#[derive(Default, Clone, Debug)]
 pub enum ExecutionMode {
+    /// The step will be run without a transaction
+    /// can not be rolledback
+    #[default]
     Optimistic,
+    /// The step will be run in a transaction
     Transactional,
 }
 
