@@ -54,7 +54,7 @@ impl CortexGenerator {
                             Ident::new(&p.field_type.clone().to_rust_type(), Span::call_site());
                         let field_text = Ident::new(&field_text, Span::call_site());
                         quote! {
-                            #field_text: #t_type
+                            pub #field_text: #t_type
                         }
                     } else {
                         quote!()
@@ -63,7 +63,7 @@ impl CortexGenerator {
                 .collect::<Vec<_>>();
             quote! {
               #[derive(Debug, Clone)]
-              struct #name {
+              pub struct #name {
                 #(#params),*
               }
             }

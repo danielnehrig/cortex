@@ -6,15 +6,19 @@ pub fn schema() -> (Vec<Database>, Vec<Step>) {
 
     let users = Table::new("users")
         .add_prop("id", PropType::Int32)
+        .add_prop("name", PropType::Text)
+        .add_prop("name2", PropType::Text)
         .on_db(&config_db);
     let orders = Table::new("orders")
         .add_prop("id", PropType::Int32)
+        .add_prop("name", PropType::Text)
         .on_db(&sales_db);
     let data = Table::new("data")
         .add_prop("id", PropType::Int32)
         .on_db(&ts_db);
     let earnings = Table::new("earnings")
         .add_prop("id", PropType::Int32)
+        .add_prop("dope", PropType::Text)
         .on_db(&sales_db);
 
     let global_db_step = Step::new(
