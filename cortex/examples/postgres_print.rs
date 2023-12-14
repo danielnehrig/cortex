@@ -68,25 +68,25 @@ fn main() -> Result<()> {
     };
 
     let global_connection = Postgres::new(global_connection_config)?;
-    CortexPostgres::new(global_connection, cortex_conf.clone())
-        .add_step(global_db_step)
-        .execute()?;
+    let global =
+        CortexPostgres::new(global_connection, cortex_conf.clone()).add_step(global_db_step);
 
     let ts_connection = Postgres::new(ts_connection_config)?;
     let config_connection = Postgres::new(config_connection_config)?;
     let sales_connection = Postgres::new(sales_connection_config)?;
 
-    CortexPostgres::new(ts_connection, cortex_conf.clone())
+    let ts = CortexPostgres::new(ts_connection, cortex_conf.clone())
         .add_step(empty_init.clone())
-        .add_step(data_db_step)
-        .execute()?;
-    CortexPostgres::new(config_connection, cortex_conf.clone())
+        .add_step(data_db_step);
+    let conf = CortexPostgres::new(config_connection, cortex_conf.clone())
         .add_step(empty_init.clone())
-        .add_steps(conf_db_steps)
-        .execute()?;
-    CortexPostgres::new(sales_connection, cortex_conf)
+        .add_steps(conf_db_steps);
+    let sales = CortexPostgres::new(sales_connection, cortex_conf)
         .add_step(empty_init)
-        .add_steps(sales_db_steps)
-        .execute()?;
+        .add_steps(sales_db_steps);
+    println!("global: {}", global);
+    println!("ts: {}", ts);
+    println!("conf: {}", conf);
+    println!("sales: {}", sales);
     Ok(())
 }

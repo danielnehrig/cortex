@@ -3,7 +3,7 @@ use crate::{
     prelude::{Role, Sequence},
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 /// A database action is an action that is run on the database.
 pub enum DbAction {
     Create,
@@ -14,7 +14,7 @@ pub enum DbAction {
     Revoke,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 /// A statement is a single action that is run on the database.
 pub enum Statement {
     Table(Table),

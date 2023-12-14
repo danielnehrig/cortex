@@ -11,22 +11,29 @@ use crate::{
 
 pub(crate) struct PostgresStatementProducer;
 
-pub(crate) fn table_annotation_to_db(annotation: &PropAnnotation) -> String {
+pub(super) fn table_annotation_to_db(annotation: &PropAnnotation) -> String {
     match annotation {
         PropAnnotation::PrimaryKey => "PRIMARY KEY".to_string(),
         PropAnnotation::Unique => "UNIQUE".to_string(),
         PropAnnotation::NotNull => "NOT NULL".to_string(),
         PropAnnotation::Default => "DEFAULT".to_string(),
         PropAnnotation::Check => "CHECK".to_string(),
-        PropAnnotation::Foreign => "FOREIGN".to_string(),
+        PropAnnotation::Identity => "GENERATED ALWAYS AS IDENTITY".to_string(),
+        PropAnnotation::ForeignKey(table) => "FOREIGN".to_string(),
         PropAnnotation::Constraint(_) => "CONSTRAINT".to_string(),
-        PropAnnotation::Empty => "".to_string(),
     }
 }
 
-pub(crate) fn prop_type_to_db(prop_type: &PropType) -> String {
+pub(super) fn prop_type_to_db(prop_type: &PropType) -> String {
     match prop_type {
-        PropType::Int => "INT".to_string(),
+        PropType::Int8 => "INT".to_string(),
+        PropType::Int16 => "INT".to_string(),
+        PropType::Int32 => "INT".to_string(),
+        PropType::Int64 => "INT".to_string(),
+        PropType::UInt8 => "INT".to_string(),
+        PropType::UInt16 => "INT".to_string(),
+        PropType::UInt32 => "INT".to_string(),
+        PropType::UInt64 => "INT".to_string(),
         PropType::Text => "TEXT".to_string(),
         PropType::Bool => "BOOL".to_string(),
         PropType::Date => "DATE".to_string(),
@@ -36,19 +43,19 @@ pub(crate) fn prop_type_to_db(prop_type: &PropType) -> String {
         PropType::SmallInt => "SMALLINT".to_string(),
     }
 }
-pub(crate) fn compose_prop(prop: &TableProp) -> String {
-    let t = prop_type_to_db(&prop.t_type);
+pub(super) fn compose_prop(prop: &TableProp) -> String {
+    let t = prop_type_to_db(&prop.field_type);
     match &prop.annotation.clone() {
         Some(p) => {
             let a = table_annotation_to_db(p);
-            format!("{} {} {}", prop.name, t, a)
+            format!("{} {} {}", prop.field.get_text(), t, a)
         }
         None => {
-            format!("{} {}", prop.name, t)
+            format!("{} {}", prop.field.get_text(), t)
         }
     }
 }
-pub(crate) fn serialize_annotation(annotations: &TableAnnotation) -> String {
+pub(super) fn serialize_annotation(annotations: &TableAnnotation) -> String {
     match annotations {
         TableAnnotation::Partition => "PARTITION".to_string(),
         TableAnnotation::View => "VIEW".to_string(),
@@ -56,7 +63,7 @@ pub(crate) fn serialize_annotation(annotations: &TableAnnotation) -> String {
 }
 
 impl PostgresStatementProducer {
-    pub fn map(statement: &Statement, action: &DbAction) -> String {
+    pub(crate) fn map(statement: &Statement, action: &DbAction) -> String {
         match statement {
             Statement::Table(t) => PostgresStatementProducer::table_statement(t, action),
             Statement::Database(d) => PostgresStatementProducer::database_statement(d, action),
@@ -155,7 +162,7 @@ impl PostgresStatementProducer {
                 let props = view
                     .props
                     .iter()
-                    .map(|e| e.name.to_string())
+                    .map(|e| e.field.get_text())
                     .collect::<Vec<String>>()
                     .join(", ");
                 let from = view.from.join(", ");
@@ -228,5 +235,47 @@ impl PostgresStatementProducer {
             DbAction::Insert => panic!("inserting a database is not supported"),
             _ => panic!("granting and revoking a view is not supported"),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{
+        db::producer::postgres::PostgresStatementProducer,
+        objects::table::PropAnnotation,
+        prelude::{DbAction, PropType, Statement, Table},
+    };
+
+    #[test]
+    fn create_table() {
+        let table: Statement = Table::new("Customers")
+            .add_prop(("id", PropType::Int32, Some(PropAnnotation::PrimaryKey)))
+            .add_prop(("name", PropType::Text, Some(PropAnnotation::NotNull)))
+            .add_prop(("age", PropType::Int32, Some(PropAnnotation::NotNull)))
+            .into();
+        let result = PostgresStatementProducer::map(&table, &DbAction::Create);
+        assert_eq!(
+            result,
+            "CREATE TABLE Customers (id INT PRIMARY KEY, name TEXT NOT NULL, age INT NOT NULL);"
+        );
+    }
+
+    #[test]
+    fn create_table_with_relation() {
+        let table: Statement = Table::new("Customers")
+            .add_prop(("id", PropType::Int32, Some(PropAnnotation::PrimaryKey)))
+            .add_prop(("name", PropType::Text, Some(PropAnnotation::NotNull)))
+            .add_prop(("age", PropType::Int32, Some(PropAnnotation::NotNull)))
+            .into();
+        let table: Statement = Table::new("Order")
+            .add_prop(("id", PropType::Int32, Some(PropAnnotation::PrimaryKey)))
+            .add_prop(("name", PropType::Text, Some(PropAnnotation::NotNull)))
+            .add_prop(("id_customer", PropType::Int32, None))
+            .into();
+        let result = PostgresStatementProducer::map(&table, &DbAction::Create);
+        assert_eq!(
+            result,
+            "CREATE TABLE Customers (id INT PRIMARY KEY, name TEXT NOT NULL, age INT NOT NULL);"
+        );
     }
 }

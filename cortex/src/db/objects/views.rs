@@ -43,8 +43,8 @@ impl ViewBuilder {
 
     pub fn add_prop(&mut self, name: &str, prop_type: PropType) -> &mut Self {
         self.props.push(TableProp {
-            name: name.into(),
-            t_type: prop_type,
+            field: name.into(),
+            field_type: prop_type,
             annotation: None,
         });
         self

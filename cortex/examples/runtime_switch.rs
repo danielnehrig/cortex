@@ -20,8 +20,8 @@ impl From<String> for Db {
 
 fn schema_definition() -> Vec<Step> {
     // schema definition
-    let users = Table::new("users").add_prop(("id", PropType::Int, None));
-    let orders = Table::new("orders").add_prop(("id", PropType::Int, None));
+    let users = Table::new("users").add_prop(("id", PropType::Int32, None));
+    let orders = Table::new("orders").add_prop(("id", PropType::Int32, None));
     let db = Database::new("testo");
     let init = Step::new(
         "Init Schema",
@@ -63,7 +63,7 @@ async fn main() {
                 ),
             };
             let connection = Postgres::new(client_conf).expect("to connect to db");
-            let _ = CortexPostgres::new(connection, cortex_conf)
+            CortexPostgres::new(connection, cortex_conf)
                 .add_steps(data)
                 .execute()
                 .expect("execute to work");
@@ -77,7 +77,7 @@ async fn main() {
                 ),
             };
             let connection = Mongo::new(client_conf).await.expect("to connect to db");
-            let _ = CortexMongo::new(connection, cortex_conf)
+            CortexMongo::new(connection, cortex_conf)
                 .add_steps(data)
                 .execute()
                 .await

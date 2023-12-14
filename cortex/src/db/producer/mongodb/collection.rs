@@ -17,12 +17,19 @@ impl MongodbStatementProducerCollection {
         let schema = doc! {
             "$jsonSchema": doc! {
                 "bsonType": "object",
-                "required": collection.props.iter().map(|p| p.name.to_string()).collect::<Vec<String>>(),
+                "required": collection.props.iter().map(|p| p.field.get_text()).collect::<Vec<String>>(),
                 // create multiple documents from props iter
                 "properties": collection.props.iter().fold(doc! {}, |mut acc, p| {
                     let mut prop = doc! {
-                        "bsonType": match p.t_type {
-                            PropType::Int => "int",
+                        "bsonType": match p.field_type {
+                            PropType::Int8 => "int",
+                            PropType::Int16 => "int",
+                            PropType::Int32 => "int",
+                            PropType::Int64 => "int",
+                            PropType::UInt8 => "int",
+                            PropType::UInt16 => "int",
+                            PropType::UInt32 => "int",
+                            PropType::UInt64 => "int",
                             PropType::SmallInt => "int",
                             PropType::BigInt => "int",
                             PropType::Double => "double",
@@ -31,7 +38,7 @@ impl MongodbStatementProducerCollection {
                             PropType::Date => "date",
                             PropType::Bool => "bool",
                         },
-                        "title": p.name.to_string(),
+                        "title": p.field.get_text(),
                     };
                     if let Some(annotation) = &p.annotation {
                         match annotation {
@@ -55,7 +62,7 @@ impl MongodbStatementProducerCollection {
                                 prop.insert("description", "check".to_string());
                                 prop.insert("uniqueItems", true);
                             }
-                            PropAnnotation::Foreign => {
+                            PropAnnotation::ForeignKey(_) => {
                                 prop.insert("description", "foreign".to_string());
                                 prop.insert("uniqueItems", true);
                             }
@@ -63,13 +70,10 @@ impl MongodbStatementProducerCollection {
                                 prop.insert("description", "constraint".to_string());
                                 prop.insert("uniqueItems", true);
                             }
-                            PropAnnotation::Empty => {
-                                prop.insert("description", "empty".to_string());
-                                prop.insert("uniqueItems", true);
-                            }
+                            _ => {}
                         }
                     }
-                    acc.insert(p.name.to_string(), prop);
+                    acc.insert(p.field.get_text(), prop);
                     acc
                 }),
             }

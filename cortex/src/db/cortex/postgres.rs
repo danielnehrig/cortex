@@ -10,7 +10,7 @@ use crate::{
     prelude::StepType,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum PostgresPlugins {
     /// Postgis is a plugin that allows you to use geospatial data
     Postgis,
@@ -18,7 +18,7 @@ pub enum PostgresPlugins {
     Timescale,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct CortexPostgresConfig {
     /// Plugins/Extensions that should be installed on the database
     pub plugins: Vec<PostgresPlugins>,
@@ -126,7 +126,7 @@ impl CortexPostgres {
         Ok(())
     }
 
-    pub fn execute(&mut self) -> Result<Self, CortexError> {
+    pub fn execute(&mut self) -> Result<(), CortexError> {
         if self.data.is_empty() {
             return Err(StepValidationError(
                 "no steps have been added to the producer".to_string(),
@@ -151,13 +151,7 @@ impl CortexPostgres {
                 }
             }
         }
-        Ok(Self {
-            data: Vec::new(),
-            connection: self.connection.clone(),
-            current_schema_version: self.current_schema_version.clone(),
-            config: self.config.clone(),
-            after_execute_hooks: Vec::new(),
-        })
+        Ok(())
     }
 
     /// Executes all steps that have been added to cortex

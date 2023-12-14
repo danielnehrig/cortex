@@ -15,8 +15,8 @@
 //!     use cortex::prelude::*;
 //!
 //!     // don't need to import table prop also can pass slice of tuples with table infos
-//!     let users = Table::new("users").add_prop(("id", PropType::Int, None));
-//!     let orders = Table::new("orders").add_prop(("id", PropType::Int, None));
+//!     let users = Table::new("users").add_prop(("id", PropType::Int32, None));
+//!     let orders = Table::new("orders").add_prop(("id", PropType::Int32, None));
 //!     let db = Database::new("test");
 //!     let data = Step::new("Init Schema", StepType::Update, semver::Version::new(0, 0, 1))
 //!         .set_execution_mode(ExecutionMode::Optimistic)

@@ -4,12 +4,12 @@ use cortex::prelude::*;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let users: Table = Table::new("users")
-        .add_props_as_slice(&[("id", PropType::Int, None)])
+        .add_props_as_slice(&[("id", PropType::Int32, None)])
         .on_db("default");
     let orders: Table = Table::new("orders")
         .add_props_as_slice(&[
-            ("id", PropType::Int, None),
-            ("user_id", PropType::Int, None),
+            ("id", PropType::Int32, None),
+            ("user_id", PropType::Int32, None),
             ("order_date", PropType::Date, None),
         ])
         .on_db("default");
@@ -29,6 +29,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         supported_db_versions: (semver::Version::new(0, 0, 1), semver::Version::new(0, 0, 1)),
     };
     let cortex = CortexMongo::new(mongo, cortex_config).add_step(data);
-    _ = cortex.execute().await.expect("Failed to execute");
+    cortex.execute().await.expect("Failed to execute");
     Ok(())
 }

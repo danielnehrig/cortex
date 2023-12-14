@@ -56,7 +56,7 @@ impl CortexMongo {
         todo!()
     }
 
-    pub async fn execute(mut self) -> Result<Self, CortexError> {
+    pub async fn execute(mut self) -> Result<(), CortexError> {
         if self.data.is_empty() {
             return Err(StepValidationError(
                 "no steps have been added to the producer".to_string(),
@@ -81,12 +81,7 @@ impl CortexMongo {
                 }
             }
         }
-        Ok(Self {
-            data: Vec::new(),
-            connection: self.connection,
-            current_schema_version: self.current_schema_version.clone(),
-            config: self.config,
-        })
+        Ok(())
     }
 
     async fn execute_as_optimistic(&mut self, step: Step) -> Result<(), CortexError> {

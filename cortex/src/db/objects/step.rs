@@ -4,7 +4,7 @@ use crate::{
     db::objects::statement::Statement, objects::statement::DbAction, prelude::ExecutionMode,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 /// Steps are the main unit of work in the migration system.
 /// They are run in order, and can be either setup steps or update steps.
 /// Setup steps are run before the main update step, and are used to create
