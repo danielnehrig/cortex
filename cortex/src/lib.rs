@@ -71,6 +71,7 @@ pub mod prelude {
     pub use crate::db::cortex::postgres::*;
     pub use crate::db::prelude::*;
     pub use crate::objects::prelude::*;
+    extern crate semver;
 }
 
 pub mod connection {

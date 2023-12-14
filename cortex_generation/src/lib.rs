@@ -18,6 +18,10 @@ impl CortexGenerator {
         let structs = Self::generate_structs_from_tables(data);
         let mut file = std::fs::File::create(&self.path)?;
         file.write_all(structs.to_string().as_bytes())?;
+        let _ = std::process::Command::new("rustfmt")
+            .arg(&self.path)
+            .output()
+            .expect("failed to execute process");
         Ok(())
     }
 

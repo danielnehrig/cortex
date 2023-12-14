@@ -9,7 +9,7 @@ fn main() {
     table = table.add_annotation(TableAnnotation::Partition);
     let step = Step::new("test", StepType::Update, semver::Version::new(1, 0, 0))
         .add_statement(table, DbAction::Create);
-    CortexGenerator::new(std::path::PathBuf::from("examples/generated.rs"))
+    CortexGenerator::new(std::path::PathBuf::from("target/generated.rs"))
         .create_file(vec![step])
         .unwrap();
 }

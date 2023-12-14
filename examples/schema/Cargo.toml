@@ -1,0 +1,10 @@
+[package]
+name = "schema"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+semver = "1.0"
+cortex = {path = "../../cortex", features = ["postgres"]}
+cortex_generation = {path = "../../cortex_generation"}
