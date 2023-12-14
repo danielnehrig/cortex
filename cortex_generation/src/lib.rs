@@ -70,10 +70,12 @@ impl CortexGenerator {
     }
 
     /// DB Composite Type struct generation
+    #[allow(dead_code)]
     fn generate_structs_from_db_type() {
         todo!()
     }
 
+    #[allow(dead_code)]
     fn generate_db_functions() {
         todo!()
     }

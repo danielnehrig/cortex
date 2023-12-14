@@ -106,7 +106,7 @@ pub enum PropAnnotation {
 #[derive(Debug, Clone, PartialEq)]
 pub enum FieldAnnotation {
     PrimaryKey,
-    ForeignKey(Table),
+    ForeignKey(String, Table),
     Constraint(Box<FieldAnnotation>),
 }
 
@@ -140,19 +140,54 @@ impl Table {
     /// ```
     /// use cortex::objects::table::{Table, TableProp, PropType};
     /// let table = Table::new("table")
-    ///    .add_prop(("id", PropType::Int32, None))
-    ///    .add_prop(("name", PropType::Text, None))
-    ///    .add_prop(("age", PropType::Int32, None));
+    ///    .add_prop_with_annotation(("id", PropType::Int32, None))
+    ///    .add_prop_with_annotation(("name", PropType::Text, None))
+    ///    .add_prop_with_annotation(("age", PropType::Int32, None));
     ///  assert_eq!(table.props.len(), 3);
     ///  assert_eq!(table.props[0].field, "id".into());
     ///  assert_eq!(table.props[1].field, "name".into());
     ///  assert_eq!(table.props[2].field, "age".into());
     /// ```
-    pub fn add_prop(
+    pub fn add_prop_with_annotation(
         mut self,
         (name, prop_type, annotation): (&str, PropType, Option<PropAnnotation>),
     ) -> Self {
         self.props.push(TableProp::new(name, prop_type, annotation));
+        self
+    }
+
+    /// Add a property to the table
+    /// # Example
+    /// ```
+    /// use cortex::objects::table::{Table, TableProp, PropType};
+    /// let table = Table::new("table")
+    ///    .add_prop("id", PropType::Int32)
+    ///    .add_prop("name", PropType::Text)
+    ///    .add_prop("age", PropType::Int32);
+    ///  assert_eq!(table.props.len(), 3);
+    ///  assert_eq!(table.props[0].field, "id".into());
+    ///  assert_eq!(table.props[1].field, "name".into());
+    ///  assert_eq!(table.props[2].field, "age".into());
+    /// ```
+    pub fn add_prop(mut self, name: &str, ptype: PropType) -> Self {
+        self.props.push(TableProp::new(name, ptype, None));
+        self
+    }
+
+    /// Add a foreign key to the table
+    /// # Disclaimer
+    ///
+    /// Make sure your DB in question does support relational tables
+    ///
+    /// - MongoDB  : does not support foreign keys no relation support
+    pub fn add_foreign_key(mut self, name: &str, ptype: PropType, table: Table) -> Self {
+        self.props
+            .push(TableProp::new(TableField::Text(name.into()), ptype, None));
+        self.props.push(TableProp::new(
+            TableField::FieldAnnotation(FieldAnnotation::ForeignKey(name.into(), table)),
+            PropType::Text,
+            None,
+        ));
         self
     }
 
@@ -217,9 +252,9 @@ impl Table {
     /// ```
     /// use cortex::objects::table::{Table, TableProp, PropType, TableAnnotation};
     /// let table = Table::new("table")
-    ///    .add_prop(("id", PropType::Int32, None))
-    ///    .add_prop(("name", PropType::Text, None))
-    ///    .add_prop(("age", PropType::Int32, None))
+    ///    .add_prop("id", PropType::Int32)
+    ///    .add_prop("name", PropType::Text)
+    ///    .add_prop("age", PropType::Int32)
     ///    .add_annotation(TableAnnotation::Partition);
     ///  assert_eq!(table.props.len(), 3);
     ///  assert_eq!(table.props[0].field, "id".into());

@@ -77,10 +77,10 @@ pub(super) fn compose_prop(prop: &TableProp) -> String {
             crate::objects::table::FieldAnnotation::PrimaryKey => {
                 todo!()
             }
-            crate::objects::table::FieldAnnotation::ForeignKey(fkey_table) => {
+            crate::objects::table::FieldAnnotation::ForeignKey(name, fkey_table) => {
                 format!(
                     "FOREIGN KEY({}) REFERENCES {}({})",
-                    "test", // TODO: HOW ?
+                    name,
                     fkey_table.name,
                     fkey_table.props[0]
                         .field
@@ -281,16 +281,16 @@ impl PostgresStatementProducer {
 mod test {
     use crate::{
         db::producer::postgres::PostgresStatementProducer,
-        objects::table::{FieldAnnotation, PropAnnotation},
+        objects::table::PropAnnotation,
         prelude::{DbAction, PropType, Statement, Table},
     };
 
     #[test]
     fn create_table() {
         let table: Statement = Table::new("Customers")
-            .add_prop(("id", PropType::Int32, Some(PropAnnotation::PrimaryKey)))
-            .add_prop(("name", PropType::Text, Some(PropAnnotation::NotNull)))
-            .add_prop(("age", PropType::Int32, Some(PropAnnotation::NotNull)))
+            .add_prop_with_annotation(("id", PropType::Int32, Some(PropAnnotation::PrimaryKey)))
+            .add_prop_with_annotation(("name", PropType::Text, Some(PropAnnotation::NotNull)))
+            .add_prop_with_annotation(("age", PropType::Int32, Some(PropAnnotation::NotNull)))
             .into();
         let result = PostgresStatementProducer::map(&table, &DbAction::Create);
         assert_eq!(
@@ -302,20 +302,19 @@ mod test {
     #[test]
     fn create_table_with_relation() {
         let table = Table::new("Customers")
-            .add_prop(("id", PropType::Int32, Some(PropAnnotation::PrimaryKey)))
-            .add_prop(("name", PropType::Text, Some(PropAnnotation::NotNull)))
-            .add_prop(("age", PropType::Int32, Some(PropAnnotation::NotNull)));
+            .add_prop_with_annotation(("id", PropType::Int32, Some(PropAnnotation::PrimaryKey)))
+            .add_prop_with_annotation(("name", PropType::Text, Some(PropAnnotation::NotNull)))
+            .add_prop_with_annotation(("age", PropType::Int32, Some(PropAnnotation::NotNull)));
         let table2: Statement = Table::new("Order")
-            .add_prop(("id", PropType::Int32, Some(PropAnnotation::PrimaryKey)))
-            .add_prop(("name", PropType::Text, Some(PropAnnotation::NotNull)))
-            .add_prop(("id_customer", PropType::Int32, None))
-            .add_field_annotation(FieldAnnotation::ForeignKey(table))
+            .add_prop_with_annotation(("id", PropType::Int32, Some(PropAnnotation::PrimaryKey)))
+            .add_prop_with_annotation(("name", PropType::Text, Some(PropAnnotation::NotNull)))
+            .add_foreign_key("id_customer", PropType::Int32, table)
             .into();
         let result = PostgresStatementProducer::map(&table2, &DbAction::Create);
         println!("{}", result);
         assert_eq!(
             result,
-            "CREATE TABLE Order (id INT PRIMARY KEY, name TEXT NOT NULL, id_customer INT, FOREIGN KEY(test) REFERENCES Customers(id));"
+            "CREATE TABLE Order (id INT PRIMARY KEY, name TEXT NOT NULL, id_customer INT, FOREIGN KEY(id_customer) REFERENCES Customers(id));"
         );
     }
 }

@@ -8,16 +8,16 @@ fn main() -> Result<()> {
     let sales_db = Database::new("sales");
 
     let users = Table::new("users")
-        .add_prop(("id", PropType::Int32, None))
+        .add_prop("id", PropType::Int32)
         .on_db(&config_db);
     let orders = Table::new("orders")
-        .add_prop(("id", PropType::Int32, None))
+        .add_prop("id", PropType::Int32)
         .on_db(&sales_db);
     let data = Table::new("data")
-        .add_prop(("id", PropType::Int32, None))
+        .add_prop("id", PropType::Int32)
         .on_db(&ts_db);
     let earnings = Table::new("earnings")
-        .add_prop(("id", PropType::Int32, None))
+        .add_prop("id", PropType::Int32)
         .on_db(&sales_db);
 
     let global_db_step = Step::new(

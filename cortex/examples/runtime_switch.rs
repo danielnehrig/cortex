@@ -20,8 +20,8 @@ impl From<String> for Db {
 
 fn schema_definition() -> Vec<Step> {
     // schema definition
-    let users = Table::new("users").add_prop(("id", PropType::Int32, None));
-    let orders = Table::new("orders").add_prop(("id", PropType::Int32, None));
+    let users = Table::new("users").add_prop("id", PropType::Int32);
+    let orders = Table::new("orders").add_prop("id", PropType::Int32);
     let db = Database::new("testo");
     let init = Step::new(
         "Init Schema",
