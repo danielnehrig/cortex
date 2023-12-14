@@ -29,20 +29,20 @@ fn main() -> Result<()> {
     .add_statement(&config_db, DbAction::Create)
     .add_statement(&sales_db, DbAction::Create);
 
-    let conf_db_steps = vec![Step::new(
+    let conf_db_steps = Step::new(
         "Config Schema",
         StepType::Update,
         semver::Version::new(0, 0, 2),
     )
     .add_statement(&users, DbAction::Create)
-    .add_statement(&orders, DbAction::Create)];
-    let sales_db_steps = vec![Step::new(
+    .add_statement(&orders, DbAction::Create);
+    let sales_db_steps = Step::new(
         "Sales Schema",
         StepType::Update,
         semver::Version::new(0, 0, 2),
     )
     .set_execution_mode(ExecutionMode::Transactional)
-    .add_statement(&earnings, DbAction::Create)];
+    .add_statement(&earnings, DbAction::Create);
     let data_db_step = Step::new(
         "Timeseries Schema",
         StepType::Update,
@@ -55,38 +55,10 @@ fn main() -> Result<()> {
         semver::Version::new(0, 0, 1),
     );
 
-    let global_connection_config = ConnectionConfig::<Postgres>::default();
-    let ts_connection_config = ConnectionConfig::<Postgres>::default().with_db(&ts_db);
-    let config_connection_config = ConnectionConfig::<Postgres>::default().with_db(&config_db);
-    let sales_connection_config = ConnectionConfig::<Postgres>::default().with_db(&sales_db);
-    let cortex_conf = CortexPostgresConfig {
-        plugins: vec![PostgresPlugins::Postgis, PostgresPlugins::Timescale],
-        supported_db_versions: (
-            semver::Version::new(15, 0, 0),
-            semver::Version::new(16, 0, 0),
-        ),
-    };
+    println!("{}\n", global_db_step.print_as_pg());
+    println!("{}\n", conf_db_steps.print_as_pg());
+    println!("{}\n", data_db_step.print_as_pg());
+    println!("{}\n", empty_init.print_as_pg());
 
-    let global_connection = Postgres::new(global_connection_config)?;
-    let global =
-        CortexPostgres::new(global_connection, cortex_conf.clone()).add_step(global_db_step);
-
-    let ts_connection = Postgres::new(ts_connection_config)?;
-    let config_connection = Postgres::new(config_connection_config)?;
-    let sales_connection = Postgres::new(sales_connection_config)?;
-
-    let ts = CortexPostgres::new(ts_connection, cortex_conf.clone())
-        .add_step(empty_init.clone())
-        .add_step(data_db_step);
-    let conf = CortexPostgres::new(config_connection, cortex_conf.clone())
-        .add_step(empty_init.clone())
-        .add_steps(conf_db_steps);
-    let sales = CortexPostgres::new(sales_connection, cortex_conf)
-        .add_step(empty_init)
-        .add_steps(sales_db_steps);
-    println!("global: {}", global);
-    println!("ts: {}", ts);
-    println!("conf: {}", conf);
-    println!("sales: {}", sales);
     Ok(())
 }

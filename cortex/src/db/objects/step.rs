@@ -95,4 +95,15 @@ impl Step {
             .extend(statements.into_iter().map(|(s, a)| (s.into(), a)));
         self
     }
+
+    #[cfg(feature = "postgres")]
+    pub fn print_as_pg(&self) -> String {
+        use crate::db::producer::postgres::PostgresStatementProducer;
+
+        let mut output = String::new();
+        for (statement, action) in &self.statements {
+            output.push_str(&PostgresStatementProducer::map(statement, action));
+        }
+        output
+    }
 }
