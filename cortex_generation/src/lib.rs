@@ -1,70 +1,80 @@
-pub mod stored_proc_extractor;
-pub mod table_extractor;
+use std::{io::Write, path::PathBuf};
 
-pub fn create_data() {}
+use convert_case::{Case, Casing};
+use cortex::prelude::{Statement, Step};
+use proc_macro2::{Ident, Span, TokenStream};
+use quote::quote;
 
-#[cfg(test)]
-mod tests {
-    use std::collections::HashMap;
+pub struct CortexGenerator {
+    path: PathBuf,
+}
 
-    use syn::visit::Visit;
-
-    use crate::{stored_proc_extractor::StoredProcExtractor, table_extractor::TableExtractor};
-
-    #[test]
-    fn test_table_extractor() {
-        let mut extractor2 = TableExtractor {
-            data: HashMap::new(),
-        };
-        extractor2.visit_file(
-            &syn::parse_file(
-                r#"
-        fn main() {
-            let mut sp = Table::new("table_name")
-            .add_prop("prop1", PropType::i32)
-            .add_prop("prop2", PropType::i32);
-        }
-    "#,
-            )
-            .expect("Failed to parse file"),
-        );
-
-        assert_eq!(
-            extractor2.data.get("table_name").unwrap(),
-            &vec![
-                ("prop2".to_string(), "i32".to_string()),
-                ("prop1".to_string(), "i32".to_string()),
-            ]
-        );
+impl CortexGenerator {
+    pub fn new(path: PathBuf) -> Self {
+        Self { path }
+    }
+    // create a rust source file
+    pub fn create_file(&self, data: Vec<Step>) -> std::io::Result<()> {
+        let structs = Self::generate_structs_from_tables(data);
+        let mut file = std::fs::File::create(&self.path)?;
+        file.write_all(structs.to_string().as_bytes())?;
+        Ok(())
     }
 
-    #[test]
-    fn test_stored_proc_extractor() {
-        let mut extractor = StoredProcExtractor {
-            data: std::collections::HashMap::new(),
-        };
-        extractor.visit_file(
-            &syn::parse_file(
-                r#"
-        fn main() {
-            let mut sp = StoredProcedure::new("sp_name")
-            .add_param("param1", PropType::i32)
-            .add_param("param2", PropType::i32)
-            .add_return(PropType::i32);
+    fn generate_structs_from_tables(data: Vec<Step>) -> TokenStream {
+        let flatten = Step::flatten(data);
+        let stmts = flatten
+            .statements
+            .into_iter()
+            .map(|(s, _)| s)
+            .collect::<Vec<_>>();
+        // get any enum member as table skip the rest
+        let tables = stmts
+            .iter()
+            .filter_map(|s| match s {
+                Statement::Table(t) => Some(t),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        let build_structs = tables.into_iter().map(|x| {
+            let name = Ident::new(
+                &(x.name.to_string()).to_case(Case::Pascal),
+                Span::call_site(),
+            );
+            let params = x
+                .props
+                .iter()
+                .map(|p| {
+                    if let Some(field_text) = p.field.clone().get_as_text() {
+                        let t_type =
+                            Ident::new(&p.field_type.clone().to_rust_type(), Span::call_site());
+                        let field_text = Ident::new(&field_text, Span::call_site());
+                        quote! {
+                            #field_text: #t_type
+                        }
+                    } else {
+                        quote!()
+                    }
+                })
+                .collect::<Vec<_>>();
+            quote! {
+              #[derive(Debug, Clone)]
+              struct #name {
+                #(#params),*
+              }
+            }
+        });
+        quote! {
+            #(#build_structs)*
         }
-    "#,
-            )
-            .expect("Failed to parse file"),
-        );
+    }
 
-        assert_eq!(
-            extractor.data.get("sp_name").unwrap().0,
-            vec![
-                ("param2".to_string(), "i32".to_string()),
-                ("param1".to_string(), "i32".to_string()),
-            ]
-        );
+    /// DB Composite Type struct generation
+    fn generate_structs_from_db_type() {
+        todo!()
+    }
 
-        assert_eq!(extractor.data.get("sp_name").unwrap().1, "i32".to_string());
+    fn generate_db_functions() {
+        todo!()
     }
 }

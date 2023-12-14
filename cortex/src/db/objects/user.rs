@@ -1,6 +1,6 @@
 use crate::objects::role::Role;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct User {
     pub name: String,
     pub password: Option<String>,

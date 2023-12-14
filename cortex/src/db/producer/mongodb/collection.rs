@@ -17,7 +17,7 @@ impl MongodbStatementProducerCollection {
         let schema = doc! {
             "$jsonSchema": doc! {
                 "bsonType": "object",
-                "required": collection.props.iter().map(|p| p.field.get_text()).collect::<Vec<String>>(),
+                "required": collection.props.iter().map(|p| p.field.get_as_text().expect("the field to be a text field name")).collect::<Vec<String>>(),
                 // create multiple documents from props iter
                 "properties": collection.props.iter().fold(doc! {}, |mut acc, p| {
                     let mut prop = doc! {
@@ -38,7 +38,7 @@ impl MongodbStatementProducerCollection {
                             PropType::Date => "date",
                             PropType::Bool => "bool",
                         },
-                        "title": p.field.get_text(),
+                        "title": p.field.get_as_text().expect("the field to be a text field name"),
                     };
                     if let Some(annotation) = &p.annotation {
                         match annotation {
@@ -73,7 +73,7 @@ impl MongodbStatementProducerCollection {
                             _ => {}
                         }
                     }
-                    acc.insert(p.field.get_text(), prop);
+                    acc.insert(p.field.get_as_text().expect("field to be text based"), prop);
                     acc
                 }),
             }

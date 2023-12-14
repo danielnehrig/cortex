@@ -19,7 +19,16 @@ pub(super) fn table_annotation_to_db(annotation: &PropAnnotation) -> String {
         PropAnnotation::Default => "DEFAULT".to_string(),
         PropAnnotation::Check => "CHECK".to_string(),
         PropAnnotation::Identity => "GENERATED ALWAYS AS IDENTITY".to_string(),
-        PropAnnotation::ForeignKey(table) => "FOREIGN".to_string(),
+        PropAnnotation::ForeignKey(table) => {
+            format!(
+                "REFERENCES {}({})",
+                table.name,
+                table.props[0]
+                    .field
+                    .get_as_text()
+                    .expect("this to be a text field")
+            )
+        }
         PropAnnotation::Constraint(_) => "CONSTRAINT".to_string(),
     }
 }
@@ -45,14 +54,44 @@ pub(super) fn prop_type_to_db(prop_type: &PropType) -> String {
 }
 pub(super) fn compose_prop(prop: &TableProp) -> String {
     let t = prop_type_to_db(&prop.field_type);
-    match &prop.annotation.clone() {
-        Some(p) => {
-            let a = table_annotation_to_db(p);
-            format!("{} {} {}", prop.field.get_text(), t, a)
-        }
-        None => {
-            format!("{} {}", prop.field.get_text(), t)
-        }
+    match &prop.field {
+        crate::objects::table::TableField::Text(_) => match &prop.annotation.clone() {
+            Some(p) => {
+                let a = table_annotation_to_db(p);
+                format!(
+                    "{} {} {}",
+                    prop.field.get_as_text().expect("to get text field"),
+                    t,
+                    a
+                )
+            }
+            None => {
+                format!(
+                    "{} {}",
+                    prop.field.get_as_text().expect("to get text field"),
+                    t
+                )
+            }
+        },
+        crate::objects::table::TableField::FieldAnnotation(anon) => match anon {
+            crate::objects::table::FieldAnnotation::PrimaryKey => {
+                todo!()
+            }
+            crate::objects::table::FieldAnnotation::ForeignKey(fkey_table) => {
+                format!(
+                    "FOREIGN KEY({}) REFERENCES {}({})",
+                    "test", // TODO: HOW ?
+                    fkey_table.name,
+                    fkey_table.props[0]
+                        .field
+                        .get_as_text()
+                        .expect("to get text field")
+                )
+            }
+            crate::objects::table::FieldAnnotation::Constraint(_) => {
+                todo!()
+            }
+        },
     }
 }
 pub(super) fn serialize_annotation(annotations: &TableAnnotation) -> String {
@@ -162,7 +201,7 @@ impl PostgresStatementProducer {
                 let props = view
                     .props
                     .iter()
-                    .map(|e| e.field.get_text())
+                    .map(|e| e.field.get_as_text().expect("this to be a text field"))
                     .collect::<Vec<String>>()
                     .join(", ");
                 let from = view.from.join(", ");
@@ -242,7 +281,7 @@ impl PostgresStatementProducer {
 mod test {
     use crate::{
         db::producer::postgres::PostgresStatementProducer,
-        objects::table::PropAnnotation,
+        objects::table::{FieldAnnotation, PropAnnotation},
         prelude::{DbAction, PropType, Statement, Table},
     };
 
@@ -262,20 +301,21 @@ mod test {
 
     #[test]
     fn create_table_with_relation() {
-        let table: Statement = Table::new("Customers")
+        let table = Table::new("Customers")
             .add_prop(("id", PropType::Int32, Some(PropAnnotation::PrimaryKey)))
             .add_prop(("name", PropType::Text, Some(PropAnnotation::NotNull)))
-            .add_prop(("age", PropType::Int32, Some(PropAnnotation::NotNull)))
-            .into();
-        let table: Statement = Table::new("Order")
+            .add_prop(("age", PropType::Int32, Some(PropAnnotation::NotNull)));
+        let table2: Statement = Table::new("Order")
             .add_prop(("id", PropType::Int32, Some(PropAnnotation::PrimaryKey)))
             .add_prop(("name", PropType::Text, Some(PropAnnotation::NotNull)))
             .add_prop(("id_customer", PropType::Int32, None))
+            .add_field_annotation(FieldAnnotation::ForeignKey(table))
             .into();
-        let result = PostgresStatementProducer::map(&table, &DbAction::Create);
+        let result = PostgresStatementProducer::map(&table2, &DbAction::Create);
+        println!("{}", result);
         assert_eq!(
             result,
-            "CREATE TABLE Customers (id INT PRIMARY KEY, name TEXT NOT NULL, age INT NOT NULL);"
+            "CREATE TABLE Order (id INT PRIMARY KEY, name TEXT NOT NULL, id_customer INT, FOREIGN KEY(test) REFERENCES Customers(id));"
         );
     }
 }

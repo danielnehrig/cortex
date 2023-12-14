@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::objects::statement::Statement;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 /// Database related information
 pub struct Database {
     pub name: Rc<str>,

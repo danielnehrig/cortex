@@ -16,6 +16,7 @@ pub struct CortexMongoConfig {
 pub struct CortexMongo {
     data: Vec<Step>,
     connection: Mongo,
+    #[allow(dead_code)]
     config: CortexMongoConfig,
     current_schema_version: semver::Version,
 }

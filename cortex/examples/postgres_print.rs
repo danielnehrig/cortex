@@ -57,6 +57,7 @@ fn main() -> Result<()> {
 
     println!("{}\n", global_db_step.print_as_pg());
     println!("{}\n", conf_db_steps.print_as_pg());
+    println!("{}\n", sales_db_steps.print_as_pg());
     println!("{}\n", data_db_step.print_as_pg());
     println!("{}\n", empty_init.print_as_pg());
 

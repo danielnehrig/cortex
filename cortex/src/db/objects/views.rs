@@ -1,6 +1,6 @@
 use crate::objects::table::{PropType, Table, TableProp};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct View {
     pub(crate) name: String,
     pub(crate) props: Vec<TableProp>,

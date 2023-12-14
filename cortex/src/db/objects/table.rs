@@ -3,7 +3,7 @@ use std::rc::Rc;
 use crate::objects::statement::Statement;
 
 #[doc(alias = "Collection")]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 /// Table struct for creating tables
 pub struct Table {
     /// name of the table
@@ -24,7 +24,7 @@ pub struct Table {
     pub namespace: Option<Rc<str>>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 /// TableProp struct for creating properties of a table
 pub struct TableProp {
     pub field: TableField,
@@ -32,22 +32,22 @@ pub struct TableProp {
     pub annotation: Option<PropAnnotation>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TableField {
     Text(Rc<str>),
-    Annotation(TableAnnotation),
+    FieldAnnotation(FieldAnnotation),
 }
 
 impl TableField {
-    pub fn get_text(&self) -> String {
+    pub fn get_as_text(&self) -> Option<String> {
         match self {
-            TableField::Text(text) => text.to_string(),
-            _ => panic!("TableField is not a text field"),
+            TableField::Text(text) => Some(text.to_string()),
+            _ => None,
         }
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 /// PropType enum for defining the type of a property
 pub enum PropType {
     Int8,
@@ -90,7 +90,7 @@ impl PropType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 /// PropAnnotation enum for defining the annotation of a property
 pub enum PropAnnotation {
     PrimaryKey,
@@ -101,6 +101,13 @@ pub enum PropAnnotation {
     Identity,
     ForeignKey(Table),
     Constraint(Box<PropAnnotation>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum FieldAnnotation {
+    PrimaryKey,
+    ForeignKey(Table),
+    Constraint(Box<FieldAnnotation>),
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -137,15 +144,24 @@ impl Table {
     ///    .add_prop(("name", PropType::Text, None))
     ///    .add_prop(("age", PropType::Int32, None));
     ///  assert_eq!(table.props.len(), 3);
-    ///  assert_eq!(table.props[0].name, "id".into());
-    ///  assert_eq!(table.props[1].name, "name".into());
-    ///  assert_eq!(table.props[2].name, "age".into());
+    ///  assert_eq!(table.props[0].field, "id".into());
+    ///  assert_eq!(table.props[1].field, "name".into());
+    ///  assert_eq!(table.props[2].field, "age".into());
     /// ```
     pub fn add_prop(
         mut self,
         (name, prop_type, annotation): (&str, PropType, Option<PropAnnotation>),
     ) -> Self {
         self.props.push(TableProp::new(name, prop_type, annotation));
+        self
+    }
+
+    pub fn add_field_annotation(mut self, annotation: FieldAnnotation) -> Self {
+        self.props.push(TableProp::new(
+            TableField::FieldAnnotation(annotation),
+            PropType::Text,
+            None,
+        ));
         self
     }
 
@@ -181,9 +197,9 @@ impl Table {
     ///    ("age", PropType::Int32, None),
     ///    ]);
     ///  assert_eq!(table.props.len(), 3);
-    ///  assert_eq!(table.props[0].name, "id".into());
-    ///  assert_eq!(table.props[1].name, "name".into());
-    ///  assert_eq!(table.props[2].name, "age".into());
+    ///  assert_eq!(table.props[0].field, "id".into());
+    ///  assert_eq!(table.props[1].field, "name".into());
+    ///  assert_eq!(table.props[2].field, "age".into());
     /// ```
     pub fn add_props_as_slice(
         mut self,
@@ -206,9 +222,9 @@ impl Table {
     ///    .add_prop(("age", PropType::Int32, None))
     ///    .add_annotation(TableAnnotation::Partition);
     ///  assert_eq!(table.props.len(), 3);
-    ///  assert_eq!(table.props[0].name, "id".into());
-    ///  assert_eq!(table.props[1].name, "name".into());
-    ///  assert_eq!(table.props[2].name, "age".into());
+    ///  assert_eq!(table.props[0].field, "id".into());
+    ///  assert_eq!(table.props[1].field, "name".into());
+    ///  assert_eq!(table.props[2].field, "age".into());
     ///  assert_eq!(table.annotations.len(), 1);
     ///  assert_eq!(table.annotations[0], TableAnnotation::Partition);
     /// ```
@@ -242,7 +258,7 @@ impl TableProp {
     /// ```
     /// use cortex::objects::table::{TableProp, PropType};
     /// let prop = TableProp::new("id", PropType::Int32, None);
-    /// assert_eq!(prop.name, "id".into());
+    /// assert_eq!(prop.field, "id".into());
     /// ```
     pub fn new(
         name: impl Into<TableField>,
