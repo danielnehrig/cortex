@@ -1,12 +1,13 @@
 use crate::{
     objects::{
+        composite_type::CompositeTypeProp,
         database::Database,
         procedure::StoredProcedure,
         statement::{DbAction, Statement},
         table::{PropAnnotation, PropType, Table, TableAnnotation, TableProp},
         views::View,
     },
-    prelude::{Role, Sequence, User},
+    prelude::{CompositeType, Role, Sequence, User},
 };
 
 pub(crate) struct PostgresStatementProducer;
@@ -52,7 +53,12 @@ pub(super) fn prop_type_to_db(prop_type: &PropType) -> String {
         PropType::Double => "double precision".into(),
     }
 }
-pub(super) fn compose_prop(prop: &TableProp) -> String {
+
+pub(super) fn compose_prop(prop: &CompositeTypeProp) -> String {
+    let a = prop_type_to_db(&prop.field_type);
+    format!("{} {}", prop.field, a)
+}
+pub(super) fn compose_table_prop(prop: &TableProp) -> String {
     let t = prop_type_to_db(&prop.field_type);
     match &prop.field {
         crate::objects::table::TableField::Text(_) => match &prop.annotation.clone() {
@@ -110,6 +116,10 @@ impl PostgresStatementProducer {
             Statement::User(u) => PostgresStatementProducer::user_statement(u, action),
             Statement::Role(r) => PostgresStatementProducer::role_statement(r, action),
             Statement::Sequence(s) => PostgresStatementProducer::sequence_statement(s, action),
+            Statement::CompositeType(c) => {
+                PostgresStatementProducer::composite_type_statement(c, action)
+            }
+            Statement::Trigger(_) => unimplemented!(),
         }
     }
 
@@ -240,7 +250,7 @@ impl PostgresStatementProducer {
                 let props = table
                     .props
                     .iter()
-                    .map(compose_prop)
+                    .map(compose_table_prop)
                     .collect::<Vec<String>>()
                     .join(", ");
                 let annotations = table
@@ -275,14 +285,32 @@ impl PostgresStatementProducer {
             _ => panic!("granting and revoking a view is not supported"),
         }
     }
+
+    fn composite_type_statement(comp_type: &CompositeType, action: &DbAction) -> String {
+        match action {
+            DbAction::Create => {
+                let props = comp_type
+                    .props
+                    .iter()
+                    .map(compose_prop)
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                format!("CREATE TYPE {} AS ({});", comp_type.name, props)
+            }
+            DbAction::Drop => format!("DROP TYPE IF EXISTS {};", comp_type.name),
+            DbAction::Alter => panic!("altering a composite type is not supported"),
+            DbAction::Insert => panic!("inserting a composite type is not supported"),
+            _ => panic!("granting and revoking a composite type is not supported"),
+        }
+    }
 }
 
 #[cfg(test)]
 mod test {
     use crate::{
         db::producer::postgres::PostgresStatementProducer,
-        objects::table::PropAnnotation,
-        prelude::{DbAction, PropType, Statement, Table},
+        objects::statement::{DbAction, Statement},
+        objects::table::{PropAnnotation, PropType, Table},
     };
 
     #[test]

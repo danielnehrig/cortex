@@ -1,5 +1,8 @@
 use crate::{
-    objects::{database::Database, table::Table, user::User, views::View},
+    objects::{
+        composite_type::CompositeType, database::Database, table::Table, trigger::Trigger,
+        user::User, views::View,
+    },
     prelude::{Role, Sequence},
 };
 
@@ -23,6 +26,8 @@ pub enum Statement {
     User(User),
     Role(Role),
     Sequence(Sequence),
+    CompositeType(CompositeType),
+    Trigger(Trigger),
 }
 
 impl Statement {
