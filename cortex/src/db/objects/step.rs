@@ -142,6 +142,14 @@ impl Step {
                     DbAction::Drop => {
                         acc.statements.retain(|(s, _)| s != &statement);
                     }
+                    DbAction::Alter => {
+                        if acc.statements.iter().any(|(s, _)| s == &statement) {
+                            acc.statements.retain(|(s, _)| s != &statement);
+                            acc.statements.push((statement, action))
+                        } else {
+                            panic!("Table does not exist")
+                        }
+                    }
                     _ => {}
                 }
             }

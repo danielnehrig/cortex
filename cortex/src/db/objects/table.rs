@@ -60,11 +60,11 @@ pub enum PropType {
     UInt64,
     Double,
     Text,
+    Char(usize),
+    VarChar(usize),
     Bool,
     Date,
     Timestamp,
-    BigInt,
-    SmallInt,
     // ...
 }
 
@@ -81,11 +81,11 @@ impl PropType {
             PropType::UInt64 => "u64".into(),
             PropType::Double => "f64".into(),
             PropType::Text => "String".into(),
+            PropType::VarChar(_) => "String".into(),
+            PropType::Char(_) => "Char".into(),
             PropType::Bool => "bool".into(),
             PropType::Date => "chrono::NaiveDate".into(),
             PropType::Timestamp => "chrono::NaiveDateTime".into(),
-            PropType::BigInt => "i64".into(),
-            PropType::SmallInt => "i16".into(),
         }
     }
 }
@@ -150,9 +150,10 @@ impl Table {
     /// ```
     pub fn add_prop_with_annotation(
         mut self,
-        (name, prop_type, annotation): (&str, PropType, Option<PropAnnotation>),
+        (name, prop_type, annotation): (&str, PropType, impl Into<Option<PropAnnotation>>),
     ) -> Self {
-        self.props.push(TableProp::new(name, prop_type, annotation));
+        self.props
+            .push(TableProp::new(name, prop_type, annotation.into()));
         self
     }
 
@@ -180,11 +181,11 @@ impl Table {
     /// Make sure your DB in question does support relational tables
     ///
     /// - MongoDB  : does not support foreign keys no relation support
-    pub fn add_foreign_key(mut self, name: &str, ptype: PropType, table: Table) -> Self {
+    pub fn add_foreign_key(mut self, name: &str, ptype: PropType, table: &Table) -> Self {
         self.props
             .push(TableProp::new(TableField::Text(name.into()), ptype, None));
         self.props.push(TableProp::new(
-            TableField::FieldAnnotation(FieldAnnotation::ForeignKey(name.into(), table)),
+            TableField::FieldAnnotation(FieldAnnotation::ForeignKey(name.into(), table.clone())),
             PropType::Text,
             None,
         ));

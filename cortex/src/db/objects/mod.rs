@@ -14,6 +14,6 @@ pub mod prelude {
     pub use super::sequence::Sequence;
     pub use super::statement::{DbAction, Statement};
     pub use super::step::{Step, StepType};
-    pub use super::table::{PropType, Table, TableProp};
+    pub use super::table::{PropAnnotation, PropType, Table, TableField, TableProp};
     pub use super::user::User;
 }

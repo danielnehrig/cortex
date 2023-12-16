@@ -35,21 +35,21 @@ pub(super) fn table_annotation_to_db(annotation: &PropAnnotation) -> String {
 
 pub(super) fn prop_type_to_db(prop_type: &PropType) -> String {
     match prop_type {
-        PropType::Int8 => "INT".to_string(),
-        PropType::Int16 => "INT".to_string(),
-        PropType::Int32 => "INT".to_string(),
-        PropType::Int64 => "INT".to_string(),
-        PropType::UInt8 => "INT".to_string(),
-        PropType::UInt16 => "INT".to_string(),
-        PropType::UInt32 => "INT".to_string(),
-        PropType::UInt64 => "INT".to_string(),
-        PropType::Text => "TEXT".to_string(),
-        PropType::Bool => "BOOL".to_string(),
-        PropType::Date => "DATE".to_string(),
-        PropType::Timestamp => "TIMESTAMP".to_string(),
-        PropType::BigInt => "BIGINT".to_string(),
-        PropType::Double => "DOUBLE".to_string(),
-        PropType::SmallInt => "SMALLINT".to_string(),
+        PropType::Int8 => "smallint".into(),
+        PropType::Int16 => "smallint".into(),
+        PropType::Int32 => "integer".into(),
+        PropType::Int64 => "bigint".into(),
+        PropType::UInt8 => "smallint".into(),
+        PropType::UInt16 => "smallint".into(),
+        PropType::UInt32 => "integer".into(),
+        PropType::UInt64 => "bigint".into(),
+        PropType::Text => "text".into(),
+        PropType::Char(n) => format!("char({})", n),
+        PropType::VarChar(n) => format!("varchar({})", n),
+        PropType::Bool => "bool".into(),
+        PropType::Date => "date".into(),
+        PropType::Timestamp => "timestamp".into(),
+        PropType::Double => "double precision".into(),
     }
 }
 pub(super) fn compose_prop(prop: &TableProp) -> String {
@@ -260,9 +260,9 @@ impl PostgresStatementProducer {
                 }
             }
             DbAction::Drop => format!("DROP TABLE IF EXISTS {};", table.name),
-            DbAction::Alter => panic!("altering a table is not supported"),
+            DbAction::Alter => panic!("altering a table is not yet supported"),
             DbAction::Insert => panic!("inserting a table is not supported"),
-            _ => panic!("granting and revoking a view is not supported"),
+            _ => panic!("granting and revoking a table is not supported"),
         }
     }
 
@@ -308,10 +308,9 @@ mod test {
         let table2: Statement = Table::new("Order")
             .add_prop_with_annotation(("id", PropType::Int32, Some(PropAnnotation::PrimaryKey)))
             .add_prop_with_annotation(("name", PropType::Text, Some(PropAnnotation::NotNull)))
-            .add_foreign_key("id_customer", PropType::Int32, table)
+            .add_foreign_key("id_customer", PropType::Int32, &table)
             .into();
         let result = PostgresStatementProducer::map(&table2, &DbAction::Create);
-        println!("{}", result);
         assert_eq!(
             result,
             "CREATE TABLE Order (id INT PRIMARY KEY, name TEXT NOT NULL, id_customer INT, FOREIGN KEY(id_customer) REFERENCES Customers(id));"
