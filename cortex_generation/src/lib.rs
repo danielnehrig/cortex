@@ -13,7 +13,7 @@ impl CortexGenerator {
     pub fn new(path: PathBuf) -> Self {
         Self { path }
     }
-    // create a rust source file
+    /// create a rust source file
     pub fn create_file(&self, data: Vec<Step>) -> std::io::Result<()> {
         let structs = Self::generate_structs_from_tables(data);
         let mut file = std::fs::File::create(&self.path)?;
@@ -25,7 +25,30 @@ impl CortexGenerator {
         Ok(())
     }
 
-    fn generate_structs_from_tables(data: Vec<Step>) -> TokenStream {
+    /// # Notes!
+    ///
+    /// Vec<Step> data you pass should be your entire db schema
+    ///
+    /// Takes a vector of steps and collape them into a single step
+    /// So that we can generate structs for each table step
+    /// That exists in the entire db schema
+    ///
+    /// # Usage
+    /// ```no_check
+    /// use cortex::objects::step::{Step, StepType};
+    /// use cortex::objects::statement::Statement;
+    /// use cortex::objects::table::Table;
+    /// use cortex::objects::statement::DbAction;
+    /// use cortex_generation::CortexGenerator;
+    ///
+    /// let data = vec![
+    ///    (Table::new("test"), DbAction::Create),
+    /// ];
+    /// let step = Step::new("test", StepType::Update, semver::Version::new(1, 0, 0))
+    ///    .add_statements(data);
+    /// let _ = CortexGenerator::generate_structs_from_tables(vec![step]);
+    /// ```
+    pub(crate) fn generate_structs_from_tables(data: Vec<Step>) -> TokenStream {
         let flatten = Step::flatten(data);
         let stmts = flatten
             .statements

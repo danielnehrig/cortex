@@ -295,7 +295,7 @@ mod test {
         let result = PostgresStatementProducer::map(&table, &DbAction::Create);
         assert_eq!(
             result,
-            "CREATE TABLE Customers (id INT PRIMARY KEY, name TEXT NOT NULL, age INT NOT NULL);"
+            "CREATE TABLE Customers (id integer PRIMARY KEY, name text NOT NULL, age integer NOT NULL);"
         );
     }
 
@@ -313,7 +313,7 @@ mod test {
         let result = PostgresStatementProducer::map(&table2, &DbAction::Create);
         assert_eq!(
             result,
-            "CREATE TABLE Order (id INT PRIMARY KEY, name TEXT NOT NULL, id_customer INT, FOREIGN KEY(id_customer) REFERENCES Customers(id));"
+            "CREATE TABLE Order (id integer PRIMARY KEY, name text NOT NULL, id_customer integer, FOREIGN KEY(id_customer) REFERENCES Customers(id));"
         );
     }
 }
