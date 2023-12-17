@@ -21,6 +21,8 @@ pub fn schema() -> (Vec<Database>, Vec<Step>) {
         .add_prop("dope", PropType::Text)
         .on_db(&sales_db);
 
+    let comp = CompositeType::new("dope").add_prop("data", PropType::Int32);
+
     let global_db_step = Step::new(
         "Init Global Schema",
         StepType::InitSetup,
@@ -35,8 +37,9 @@ pub fn schema() -> (Vec<Database>, Vec<Step>) {
         StepType::Update,
         semver::Version::new(0, 0, 2),
     )
-    .add_statement(&users, DbAction::Create)
-    .add_statement(&orders, DbAction::Create);
+    .add_statement(users, DbAction::Create)
+    .add_statement(comp, DbAction::Create)
+    .add_statement(orders, DbAction::Create);
     let sales_db_steps = Step::new(
         "Sales Schema",
         StepType::Update,

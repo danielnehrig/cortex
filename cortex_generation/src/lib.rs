@@ -15,9 +15,11 @@ impl CortexGenerator {
     }
     /// create a rust source file
     pub fn create_file(&self, data: Vec<Step>) -> std::io::Result<()> {
-        let structs = Self::generate_structs_from_tables(data);
+        let structs = Self::generate_structs_from_tables(data.clone());
+        let structs2 = Self::generate_structs_from_db_type(data);
         let mut file = std::fs::File::create(&self.path)?;
         file.write_all(structs.to_string().as_bytes())?;
+        file.write_all(structs2.to_string().as_bytes())?;
         let _ = std::process::Command::new("rustfmt")
             .arg(&self.path)
             .output()

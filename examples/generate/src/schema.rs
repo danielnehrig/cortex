@@ -18,3 +18,7 @@ pub struct Earnings {
 pub struct Data {
     pub id: i32,
 }
+#[derive(Debug, Clone)]
+pub struct Dope {
+    pub data: i32,
+}
