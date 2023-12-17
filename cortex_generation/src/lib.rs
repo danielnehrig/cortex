@@ -1,7 +1,7 @@
 use std::{io::Write, path::PathBuf};
 
 use convert_case::{Case, Casing};
-use cortex::prelude::{Statement, Step};
+use cortex::prelude::Step;
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::quote;
 
