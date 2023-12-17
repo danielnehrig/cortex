@@ -6,8 +6,6 @@ pub struct View {
     pub(crate) props: Vec<TableProp>,
     pub(crate) from: Vec<String>,
     pub(crate) where_clause: Vec<String>,
-    #[allow(dead_code)]
-    pub(crate) db: Option<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -76,7 +74,6 @@ impl ViewBuilder {
             props: self.props.clone(),
             from: self.from.clone(),
             where_clause: self.where_clause.clone(),
-            db: self.db.clone(),
         }
     }
 }

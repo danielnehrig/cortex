@@ -33,6 +33,9 @@ type HookFn = dyn Fn(HookFnParam);
 type Hook = Rc<HookFn>;
 
 #[derive(Clone)]
+/// CortexPostgres is the main object of cortex
+/// It is used to create the database and setups around it
+/// It's the heart of cortex
 pub struct CortexPostgres {
     /// The steps that should be executed
     data: Vec<Step>,
