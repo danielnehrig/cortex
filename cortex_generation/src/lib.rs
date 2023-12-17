@@ -1,106 +1,146 @@
-use std::collections::HashMap;
+use std::{io::Write, path::PathBuf};
 
-use quote::{quote, ToTokens};
-use syn::{visit::Visit, Expr, ItemFn};
+use convert_case::{Case, Casing};
+use cortex::prelude::Step;
+use proc_macro2::{Ident, Span, TokenStream};
+use quote::quote;
 
-#[derive(Debug, Default)]
-struct Extractor {
-    data: HashMap<String, (Vec<(String, String)>, String)>,
+pub struct CortexGenerator {
+    path: PathBuf,
 }
 
-impl<'ast> Visit<'ast> for Extractor {
-    fn visit_expr_method_call(&mut self, i: &'ast syn::ExprMethodCall) {
-        let m_name = i.method.to_string();
-        if let Some(name) = self.find_type_name(i) {
-            if m_name == "add_param" {
-                eprintln!("Found type: {:#?}", i);
-                // this is the param name
-                let param_name = if let Expr::Lit(lit) = i.args.first().unwrap() {
-                    if let syn::Lit::Str(lit) = &lit.lit {
-                        lit.value()
-                    } else {
-                        panic!("Expected name to be a string")
-                    }
-                } else {
-                    panic!("Expected name to be a string")
-                };
-                // this is the param type
-                let param_type: Option<String> = if let Expr::Path(lit) = i.args.last().unwrap() {
-                    Some(lit.path.segments.last().unwrap().ident.to_string())
-                } else {
-                    None
-                };
-
-                if let Some((params, _)) = self.data.get_mut(&name) {
-                    params.push((param_name, param_type.unwrap()));
-                } else {
-                    self.data.insert(
-                        name.clone(),
-                        (vec![(param_name, param_type.unwrap())], "".to_string()),
-                    );
-                }
-            }
-            if m_name == "add_return" {
-                // get the return type
-                if let Expr::Path(path) = &i.args[0] {
-                    let return_type = path.path.segments.last().unwrap().ident.to_string();
-                    if let Some((_, return_type)) = self.data.get_mut(&name) {
-                        *return_type = return_type.clone() + ", " + &return_type;
-                    } else {
-                        self.data.insert(name, (vec![], return_type));
-                    }
-                }
-            }
-        }
-        syn::visit::visit_expr_method_call(self, i);
+impl CortexGenerator {
+    pub fn new(path: PathBuf) -> Self {
+        Self { path }
     }
-}
+    /// create a rust source file
+    pub fn create_file(&self, data: Vec<Step>) -> std::io::Result<()> {
+        let structs = Self::generate_structs_from_tables(data.clone());
+        let structs2 = Self::generate_structs_from_db_type(data);
+        let mut file = std::fs::File::create(&self.path)?;
+        file.write_all(structs.to_string().as_bytes())?;
+        file.write_all(structs2.to_string().as_bytes())?;
+        let _ = std::process::Command::new("rustfmt")
+            .arg(&self.path)
+            .output()
+            .expect("failed to execute process");
+        Ok(())
+    }
 
-impl Extractor {
-    fn find_type_name(&self, expr: &syn::ExprMethodCall) -> Option<String> {
-        let mut current_expr = &*expr.receiver;
-        loop {
-            match current_expr {
-                Expr::Call(call) => {
-                    eprintln!("{:#?}", call);
-                    if let Expr::Path(path) = &*call.func {
-                        if path.path.segments.first().unwrap().ident != "StoredProcedure" {
-                            return None;
+    /// # Notes!
+    ///
+    /// Vec<Step> data you pass should be your entire db schema
+    ///
+    /// Takes a vector of steps and collape them into a single step
+    /// So that we can generate structs for each table step
+    /// That exists in the entire db schema
+    ///
+    /// # Usage
+    /// ```no_check
+    /// use cortex::objects::step::{Step, StepType};
+    /// use cortex::objects::statement::Statement;
+    /// use cortex::objects::table::Table;
+    /// use cortex::objects::statement::DbAction;
+    /// use cortex_generation::CortexGenerator;
+    ///
+    /// let data = vec![
+    ///    (Table::new("test"), DbAction::Create),
+    /// ];
+    /// let step = Step::new("test", StepType::Update, semver::Version::new(1, 0, 0))
+    ///    .add_statements(data);
+    /// let _ = CortexGenerator::generate_structs_from_tables(vec![step]);
+    /// ```
+    pub(crate) fn generate_structs_from_tables(data: Vec<Step>) -> TokenStream {
+        let flatten = Step::flatten(data);
+        let stmts = flatten
+            .statements
+            .into_iter()
+            .map(|(s, _)| s)
+            .collect::<Vec<_>>();
+        // get any enum member as table skip the rest
+        let tables = stmts
+            .iter()
+            .filter_map(|s| s.get_as_table())
+            .collect::<Vec<_>>();
+        let build_structs = tables.into_iter().map(|x| {
+            let name = Ident::new(
+                &(x.name.to_string()).to_case(Case::Pascal),
+                Span::call_site(),
+            );
+            let params = x
+                .props
+                .iter()
+                .map(|p| {
+                    if let Some(field_text) = p.field.clone().get_as_text() {
+                        let t_type =
+                            Ident::new(&p.field_type.clone().to_rust_type(), Span::call_site());
+                        let field_text = Ident::new(&field_text, Span::call_site());
+                        quote! {
+                            pub #field_text: #t_type
                         }
-                        if path.path.segments.last().unwrap().ident == "new" {
-                            if let Expr::Lit(lit) = &call.args.first().unwrap() {
-                                if let syn::Lit::Str(lit) = &lit.lit {
-                                    return Some(lit.value());
-                                }
-                            }
-                        }
+                    } else {
+                        quote!()
                     }
-                    return None;
-                }
-                Expr::MethodCall(method_call) => {
-                    current_expr = &*method_call.receiver;
-                }
-                _ => break,
+                })
+                .collect::<Vec<_>>();
+            quote! {
+              #[derive(Debug, Clone)]
+              pub struct #name {
+                #(#params),*
+              }
             }
+        });
+        quote! {
+            #(#build_structs)*
         }
-        None
     }
-}
 
-#[proc_macro_attribute]
-pub fn create_stored_proc(
-    _attr: proc_macro::TokenStream,
-    input: proc_macro::TokenStream,
-) -> proc_macro::TokenStream {
-    let ast: ItemFn = syn::parse(input).unwrap();
-    let function = &ast.to_token_stream();
-    let mut extractor = Extractor::default();
-    extractor.visit_item_fn(&ast);
-    for (name, (params, return_type)) in extractor.data.iter() {
-        eprintln!("{}: {:?} -> {}", name, params, return_type);
+    /// DB Composite Type struct generation
+    #[allow(dead_code)]
+    pub(crate) fn generate_structs_from_db_type(data: Vec<Step>) -> TokenStream {
+        let flatten = Step::flatten(data);
+        let stmts = flatten
+            .statements
+            .into_iter()
+            .map(|(s, _)| s)
+            .collect::<Vec<_>>();
+        // get any enum member as table skip the rest
+        let ctype = stmts
+            .iter()
+            .filter_map(|s| s.get_as_composite_type())
+            .collect::<Vec<_>>();
+        let build_structs = ctype.into_iter().map(|x| {
+            let name = Ident::new(
+                &(x.name.to_string()).to_case(Case::Pascal),
+                Span::call_site(),
+            );
+            let params = x
+                .props
+                .iter()
+                .map(|p| {
+                    let field_text = p.field.clone();
+                    let t_type =
+                        Ident::new(&p.field_type.clone().to_rust_type(), Span::call_site());
+                    let field_text = Ident::new(&field_text, Span::call_site());
+                    quote! {
+                        pub #field_text: #t_type
+                    }
+                })
+                .collect::<Vec<_>>();
+            quote! {
+              #[derive(Debug, Clone)]
+              pub struct #name {
+                #(#params),*
+              }
+            }
+        });
+        quote! {
+            #(#build_structs)*
+        }
     }
-    quote! {
-        #function
+
+    #[allow(dead_code)]
+    fn generate_db_functions() {
+        todo!()
     }
-    .into()
 }

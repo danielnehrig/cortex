@@ -15,6 +15,7 @@ impl Default for ConnectionConfig<'_, SQLite> {
             port: 0,
             database: "",
             marker: std::marker::PhantomData,
+            additional: None,
             path: Some("test.db"),
         }
     }

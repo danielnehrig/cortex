@@ -14,8 +14,12 @@ impl ConnectionConfig<'_, Mongo> {
         // this is wont allow transaction since no replica set
         // mongodb://root:example@localhost:27017/admin?authSource=admin&retryWrites=true
         format!(
-            "mongodb://{}:{}@{}:{}/{}?authSource=admin&retryWrites=true",
-            self.username, self.password, self.host, self.port, self.database
+            "mongodb://{}:{}@{}/{}?{}",
+            self.username,
+            self.password,
+            self.host,
+            self.database,
+            self.additional.unwrap_or_default()
         )
     }
 }
@@ -23,13 +27,14 @@ impl ConnectionConfig<'_, Mongo> {
 impl Default for ConnectionConfig<'_, Mongo> {
     fn default() -> Self {
         ConnectionConfig {
-            username: "root",
-            password: "example",
+            username: "mongo",
+            password: "mongo",
             host: "localhost",
-            port: 27017,
+            port: 27017, // unused
             database: "default",
             marker: std::marker::PhantomData,
-            path: None,
+            path: Some("authSource=admin&retryWrites=true"),
+            additional: None,
         }
     }
 }
@@ -56,17 +61,22 @@ impl Mongo {
                     // do nothing
                     Ok(())
                 }
+                Statement::View(_) => unimplemented!(),
+                Statement::User(_) => unimplemented!(),
+                Statement::Role(_) => unimplemented!(),
+                Statement::Sequence(_) => unimplemented!(),
+                Statement::CompositeType(_) => unimplemented!(),
+                Statement::Trigger(_) => unimplemented!(),
             },
         }
     }
 
     #[cfg(feature = "async")]
-    pub async fn new(config: ConnectionConfig<'_, Mongo>) -> mongodb::error::Result<Self> {
+    pub async fn new(config: impl Into<String>) -> mongodb::error::Result<Self> {
         // Replace the placeholder with your Atlas connection string
 
         use mongodb::bson::doc;
-        let uri = config.get_uri();
-        let mut client_options = ClientOptions::parse(uri).await?;
+        let mut client_options = ClientOptions::parse(config.into()).await?;
 
         // Set the server_api field of the client_options object to Stable API version 1
         let server_api = ServerApi::builder().version(ServerApiVersion::V1).build();

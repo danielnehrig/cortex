@@ -1,30 +1,22 @@
 use anyhow::Result;
 use cortex::prelude::*;
 
-#[cfg(feature = "postgres")]
 fn main() -> Result<()> {
     let ts_db = Database::new("timeseries");
     let config_db = Database::new("config");
     let sales_db = Database::new("sales");
 
-    let users_table = Table::new("users")
-        .add_prop_with_annotation(("id", PropType::Int32, PropAnnotation::PrimaryKey))
+    let users = Table::new("users")
+        .add_prop("id", PropType::Int32)
         .on_db(&config_db);
-    let products_table = Table::new("products")
-        .add_prop_with_annotation(("id", PropType::Int32, PropAnnotation::PrimaryKey))
-        .add_prop_with_annotation(("name", PropType::Text, PropAnnotation::NotNull))
-        .add_prop_with_annotation(("price", PropType::Double, PropAnnotation::NotNull))
-        .add_prop_with_annotation(("quantity", PropType::Int32, PropAnnotation::NotNull))
-        .on_db(&config_db);
-    let orders_table = Table::new("orders")
-        .add_prop_with_annotation(("id", PropType::Int32, PropAnnotation::PrimaryKey))
-        .add_foreign_key("id_users", PropType::Int32, &users_table)
-        .on_db(&config_db);
-    let login_table = Table::new("login")
-        .add_prop_with_annotation(("id", PropType::Int32, PropAnnotation::PrimaryKey))
+    let orders = Table::new("orders")
+        .add_prop("id", PropType::Int32)
+        .on_db(&sales_db);
+    let data = Table::new("data")
+        .add_prop("id", PropType::Int32)
         .on_db(&ts_db);
-    let earnings_table = Table::new("earnings")
-        .add_prop_with_annotation(("id", PropType::Int32, PropAnnotation::PrimaryKey))
+    let earnings = Table::new("earnings")
+        .add_prop("id", PropType::Int32)
         .on_db(&sales_db);
 
     let global_db_step = Step::new(
@@ -41,22 +33,21 @@ fn main() -> Result<()> {
         StepType::Update,
         semver::Version::new(0, 0, 2),
     )
-    .add_statement(&products_table, DbAction::Create)
-    .add_statement(&users_table, DbAction::Create)
-    .add_statement(&orders_table, DbAction::Create)];
+    .add_statement(&users, DbAction::Create)
+    .add_statement(&orders, DbAction::Create)];
     let sales_db_steps = vec![Step::new(
         "Sales Schema",
         StepType::Update,
         semver::Version::new(0, 0, 2),
     )
     .set_execution_mode(ExecutionMode::Transactional)
-    .add_statement(&earnings_table, DbAction::Create)];
+    .add_statement(&earnings, DbAction::Create)];
     let data_db_step = Step::new(
         "Timeseries Schema",
         StepType::Update,
         semver::Version::new(0, 0, 2),
     )
-    .add_statement(&login_table, DbAction::Create);
+    .add_statement(&data, DbAction::Create);
     let empty_init = Step::new(
         "Init Schema",
         StepType::InitSetup,

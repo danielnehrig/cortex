@@ -1,0 +1,13 @@
+[package]
+name = "generate"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cortex = {path = "../../cortex", features = ["postgres"]}
+semver = "1.0"
+anyhow = "1.0"
+
+[build-dependencies]
+schema = {path = "../schema"}
+cortex_generation = {path = "../../cortex_generation"}

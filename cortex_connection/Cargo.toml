@@ -5,4 +5,23 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = ["all"]
+postgres = ["dep:postgres", "dep:postgres-types"]
+mongodb = ["dep:mongodb"]
+sqlite = ["dep:sqlite"]
+async = ["dep:tokio"]
+all = ["postgres","sqlite","mongodb","async"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
 [dependencies]
+postgres = { version = "0.19", optional = true }
+postgres-types = { version = "0.2", optional = true }
+mongodb = { version = "2.6", optional = true }
+sqlite = { version = "0.32", optional = true }
+tokio = { version = "1.33", features = ["full"], optional = true }
+thiserror = { version = "1.0" }
+anyhow = { version = "1.0" }
+
+[dev-dependencies]

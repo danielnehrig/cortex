@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{fmt::Display, rc::Rc};
 
 use crate::{
     connection::{postgres::Postgres, ConnectionError, ExecuteError, ExecuteType},
@@ -10,7 +10,7 @@ use crate::{
     prelude::StepType,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum PostgresPlugins {
     /// Postgis is a plugin that allows you to use geospatial data
     Postgis,
@@ -18,14 +18,12 @@ pub enum PostgresPlugins {
     Timescale,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct CortexPostgresConfig {
     /// Plugins/Extensions that should be installed on the database
     pub plugins: Vec<PostgresPlugins>,
     /// The supported versions of the database
     pub supported_db_versions: (semver::Version, semver::Version),
-    /// The execution mode of cortex
-    pub execution_mode: ExecutionMode,
 }
 
 type StatementsLen = usize;
@@ -35,6 +33,9 @@ type HookFn = dyn Fn(HookFnParam);
 type Hook = Rc<HookFn>;
 
 #[derive(Clone)]
+/// CortexPostgres is the main object of cortex
+/// It is used to create the database and setups around it
+/// It's the heart of cortex
 pub struct CortexPostgres {
     /// The steps that should be executed
     data: Vec<Step>,
@@ -128,15 +129,7 @@ impl CortexPostgres {
         Ok(())
     }
 
-    pub fn execute(&mut self) -> Result<Self, CortexError> {
-        match self.config.execution_mode {
-            ExecutionMode::Optimistic => self.execute_as_optimistic(),
-            ExecutionMode::Transactional => self.execute_as_transaction(),
-        }
-    }
-
-    /// Executes all steps that have been added to cortex
-    fn execute_as_transaction(&mut self) -> Result<Self, CortexError> {
+    pub fn execute(&mut self) -> Result<(), CortexError> {
         if self.data.is_empty() {
             return Err(StepValidationError(
                 "no steps have been added to the producer".to_string(),
@@ -153,122 +146,97 @@ impl CortexPostgres {
                 "no steps to update everything on the latest version".to_string(),
             ))?;
         }
-        let all_statements_len = self.count_statements();
         for step in self.data.clone() {
-            // print version
-            println!("version: {} {}", step.version, self.current_schema_version);
             if step.version > self.current_schema_version {
-                match step.s_type {
-                    StepType::InitSetup => {
-                        self.setup_initial_version()
-                            .map_err(ConnectionError::ExecuteError)?;
-                        for (statement, action) in &step.statements {
-                            self.connection
-                                .execute(ExecuteType::Command(PostgresStatementProducer::map(
-                                    statement, action,
-                                )))
-                                .map_err(ConnectionError::ExecuteError)?;
-                            for hook in &self.after_execute_hooks {
-                                hook((0, all_statements_len));
-                            }
-                        }
-                        self.set_version(&step.version)
-                            .map_err(ConnectionError::ExecuteError)?;
-                    }
-                    StepType::Update => {
-                        let mut transaction = self
-                            .connection
-                            .create_transaction()
-                            .map_err(ConnectionError::TransactionError)?;
-                        for (statement, action) in &step.statements {
-                            transaction
-                                .execute(ExecuteType::Command(PostgresStatementProducer::map(
-                                    statement, action,
-                                )))
-                                .map_err(ConnectionError::ExecuteError)?;
-                            for hook in &self.after_execute_hooks {
-                                hook((0, all_statements_len));
-                            }
-                        }
-
-                        transaction.commit().map_err(ConnectionError::CommitError)?;
-                        self.set_version(&step.version)
-                            .map_err(ConnectionError::ExecuteError)?;
-                    }
+                match step.mode {
+                    ExecutionMode::Optimistic => self.execute_as_optimistic(step)?,
+                    ExecutionMode::Transactional => self.execute_as_transaction(step)?,
                 }
             }
         }
-        Ok(Self {
-            data: Vec::new(),
-            connection: self.connection.clone(),
-            current_schema_version: self.current_schema_version.clone(),
-            config: self.config.clone(),
-            after_execute_hooks: Vec::new(),
-        })
+        Ok(())
     }
 
     /// Executes all steps that have been added to cortex
-    fn execute_as_optimistic(&mut self) -> Result<Self, CortexError> {
-        if self.data.is_empty() {
-            return Err(StepValidationError(
-                "no steps have been added to the producer".to_string(),
-            ))?;
-        }
-        if self
-            .data
-            .iter()
-            .filter(|step| step.version >= self.current_schema_version)
-            .count()
-            == 0
-        {
-            return Err(SchemaVersionError(
-                "no steps to update everything on the latest version".to_string(),
-            ))?;
-        }
+    fn execute_as_transaction(&mut self, step: Step) -> Result<(), CortexError> {
         let all_statements_len = self.count_statements();
-        for step in self.data.clone() {
-            if step.version >= self.current_schema_version {
-                match step.s_type {
-                    StepType::InitSetup => {
-                        self.setup_initial_version()
-                            .map_err(ConnectionError::ExecuteError)?;
-                        for (statement, action) in &step.statements {
-                            self.connection
-                                .execute(ExecuteType::Command(PostgresStatementProducer::map(
-                                    statement, action,
-                                )))
-                                .map_err(ConnectionError::ExecuteError)?;
-                            for hook in &self.after_execute_hooks {
-                                hook((0, all_statements_len));
-                            }
-                        }
-                        self.set_version(&step.version)
-                            .map_err(ConnectionError::ExecuteError)?;
-                    }
-                    StepType::Update => {
-                        for (statement, action) in &step.statements {
-                            self.connection
-                                .execute(ExecuteType::Command(PostgresStatementProducer::map(
-                                    statement, action,
-                                )))
-                                .map_err(ConnectionError::ExecuteError)?;
-                            for hook in &self.after_execute_hooks {
-                                hook((0, all_statements_len));
-                            }
-                        }
-                        self.set_version(&step.version)
-                            .map_err(ConnectionError::ExecuteError)?;
+        match step.s_type {
+            StepType::InitSetup => {
+                self.setup_initial_version()
+                    .map_err(ConnectionError::ExecuteError)?;
+                for (statement, action) in &step.statements {
+                    self.connection
+                        .execute(ExecuteType::Command(PostgresStatementProducer::map(
+                            statement, action,
+                        )))
+                        .map_err(ConnectionError::ExecuteError)?;
+                    for hook in &self.after_execute_hooks {
+                        hook((0, all_statements_len));
                     }
                 }
+                self.set_version(&step.version)
+                    .map_err(ConnectionError::ExecuteError)?;
+            }
+            StepType::Update => {
+                let mut transaction = self
+                    .connection
+                    .create_transaction()
+                    .map_err(ConnectionError::TransactionError)?;
+                for (statement, action) in &step.statements {
+                    transaction
+                        .execute(ExecuteType::Command(PostgresStatementProducer::map(
+                            statement, action,
+                        )))
+                        .map_err(ConnectionError::ExecuteError)?;
+                    for hook in &self.after_execute_hooks {
+                        hook((0, all_statements_len));
+                    }
+                }
+
+                transaction.commit().map_err(ConnectionError::CommitError)?;
+                self.set_version(&step.version)
+                    .map_err(ConnectionError::ExecuteError)?;
             }
         }
-        Ok(Self {
-            data: Vec::new(),
-            connection: self.connection.clone(),
-            current_schema_version: self.current_schema_version.clone(),
-            config: self.config.clone(),
-            after_execute_hooks: Vec::new(),
-        })
+        Ok(())
+    }
+
+    /// Executes all steps that have been added to cortex
+    fn execute_as_optimistic(&mut self, step: Step) -> Result<(), CortexError> {
+        let all_statements_len = self.count_statements();
+        match step.s_type {
+            StepType::InitSetup => {
+                self.setup_initial_version()
+                    .map_err(ConnectionError::ExecuteError)?;
+                for (statement, action) in &step.statements {
+                    self.connection
+                        .execute(ExecuteType::Command(PostgresStatementProducer::map(
+                            statement, action,
+                        )))
+                        .map_err(ConnectionError::ExecuteError)?;
+                    for hook in &self.after_execute_hooks {
+                        hook((0, all_statements_len));
+                    }
+                }
+                self.set_version(&step.version)
+                    .map_err(ConnectionError::ExecuteError)?;
+            }
+            StepType::Update => {
+                for (statement, action) in &step.statements {
+                    self.connection
+                        .execute(ExecuteType::Command(PostgresStatementProducer::map(
+                            statement, action,
+                        )))
+                        .map_err(ConnectionError::ExecuteError)?;
+                    for hook in &self.after_execute_hooks {
+                        hook((0, all_statements_len));
+                    }
+                }
+                self.set_version(&step.version)
+                    .map_err(ConnectionError::ExecuteError)?;
+            }
+        }
+        Ok(())
     }
 
     fn count_statements(&self) -> usize {
@@ -276,5 +244,21 @@ impl CortexPostgres {
             .iter()
             .map(|step| step.statements.len())
             .sum::<usize>()
+    }
+}
+
+impl Display for CortexPostgres {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut data = String::new();
+        for step in &self.data {
+            for (statement, action) in &step.statements {
+                data.push_str(&format!(
+                    "{}: {}",
+                    PostgresStatementProducer::map(statement, action),
+                    step.version
+                ));
+            }
+        }
+        write!(f, "{}", data)
     }
 }

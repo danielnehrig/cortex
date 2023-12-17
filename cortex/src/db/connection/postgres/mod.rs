@@ -30,6 +30,7 @@ impl Default for ConnectionConfig<'_, Postgres> {
             database: "postgres",
             username: "postgres",
             password: "password",
+            additional: None,
             path: None,
             marker: std::marker::PhantomData,
         }
@@ -65,11 +66,10 @@ impl<'a> PostgresTransaction<'a> {
 
 impl Postgres {
     /// create a new connection
-    pub fn new(config: ConnectionConfig<'_, Self>) -> Result<Self, ConnectError> {
-        let uri = config.get_uri();
-
-        let client = Client::connect(&uri, postgres::NoTls)
-            .map_err(|e| ConnectError(format!("{:#?}\non db {:#?}", e, config.database)))?;
+    pub fn new(config: impl Into<String>) -> Result<Self, ConnectError> {
+        let uri: String = config.into();
+        let client = Client::connect(uri.as_str(), postgres::NoTls)
+            .map_err(|e| ConnectError(format!("{:#?}\non db {:#?}", e, uri)))?;
 
         Ok(Self(Rc::new(RefCell::new(client))))
     }

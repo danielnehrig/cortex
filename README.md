@@ -1,4 +1,4 @@
-# cortex (WORK IN PROGRESS not useable yet) 🧠🗄️
+# cortex 🧠🗄️
 
 Easily create database schemas with a unified API for any supported database. Introducing `cortex`, a Rust library designed to simplify and unify database schema creation across multiple database platforms.
 
@@ -8,14 +8,20 @@ Easily create database schemas with a unified API for any supported database. In
 
 - **Unified API**: No need to learn different schema creation languages or tools for different databases.
 - **Flexibility**: Easily switch between databases or support multiple databases in a single product.
-- **Extensibility**: If a database isn't already supported, extend the library by implementing the required traits.
+- **Extensibility**: If a database isn't already supported, extend the library by implementing the required traits and structures.
 - **Product Evolution**: As your product grows and scales, your database needs might change. Whether you're migrating, supporting multiple deployments, or optimizing for specific use-cases, `cortex` makes it a breeze.
+- **Multiple Database Usage**: Based on your problem at hand you might have multiple problems to solve and not every database is designed to be good at all of them.
 
 ## Features 🚀
 
-- **Supported Databases**: PostgreSQL, SQLite(TODO), MySQL(TODO), and more. Easily expand to others.
+- **Supported Databases**: PostgreSQL, MongoDB, SQLite(TODO), MySQL(TODO), Microsoft(TODO), Oracle(TODO) and more to come. Easily expand to others.
 - **Schema Creation**: Define once, use anywhere. No more database-specific scripts.
 - **Validation**: Validate schemas against the selected database before application.
+- **Upgrade ability**: Ship products to any customer on any application / database schema version.
+- **Execution Modes**: Transactional commit execution mode and Optimistic executions.
+- **Code Generation**: Data structure generation out of tables, db functions / stored procedures API.
+- **Loss DB Control**: Your database is not abstracted away behind cortex you'll have fine grained control over the database.
+- **Simplistic**: If beginner, intermediate or advanced when it comes to databases cortex got your back.
 
 ## Getting Started 🛠️
 
@@ -39,15 +45,15 @@ let users = Table::new("users").add_prop(("id", PropType::Int, None));
 let orders = Table::new("orders").add_prop(("id", PropType::Int, None));
 let db = Database::new("test");
 let data = Step::new("Init Schema", StepType::Update, semver::Version::new(0, 0, 1))
-    .add_statement(Statement::Database(&db, DbAction::Create))
-    .add_statement(Statement::Table(&users, DbAction::Create))
-    .add_statement(Statement::Table(&orders, DbAction::Create))
-    .add_statement(Statement::Table(&users, DbAction::Drop));
+    .set_execution_mode(ExecutionMode::Optimistic)
+    .add_statement(&db, DbAction::Create)
+    .add_statement(&users, DbAction::Create)
+    .add_statement(&orders, DbAction::Create)
+    .add_statement(&users, DbAction::Drop);
 let client_conf = ConnectionConfig::<Postgres>::default();
 let connection = Postgres::new(client_conf).expect("to connect to db");
 let cortex_conf = CortexPostgresConfig {
     plugins: vec![PostgresPlugins::Postgis, PostgresPlugins::Timescale],
-    execution_mode: ExecutionMode::Transactional,
     supported_db_versions: (
         semver::Version::new(15, 0, 0),
         semver::Version::new(16, 0, 0),
@@ -90,6 +96,7 @@ At `cortex`, we're always looking to expand our capabilities and make schema man
 - **SQLite**: As one of the most used Embedded databases it's our goal as early as possible to ensure we support it.
 - **MongoDB**: As a leading NoSQL database, adding MongoDB support is high on our list. Stay tuned for more updates.
 - **Postgres**: Known for its robustness, we're actively working on integrating Postgres to extend `cortex`'s reach to more enterprise applications.
+- **MySQL**: todo
 
 ### Feature Enhancements ⚙️
 
@@ -104,10 +111,3 @@ We're excited about the journey ahead and welcome feedback, suggestions, and con
 ## License 📜
 
 `cortex` is licensed under the MIT license. Dive into the [LICENSE](./LICENSE) file for details.
-
-## TODO
-
-- cargo install cargo-llvm-cov
-- cargo install cargo-nextest
-- export RUSTFLAGS="-Cinstrument-coverage"
-- grcov . --binary-path ./target/llvm-cov-target/debug/deps -s . -t html --branch --ignore-not-existing --ignore '../*' --ignore "/*" -o target/coverage/html

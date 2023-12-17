@@ -15,10 +15,11 @@
 //!     use cortex::prelude::*;
 //!
 //!     // don't need to import table prop also can pass slice of tuples with table infos
-//!     let users = Table::new("users").add_prop(("id", PropType::Int, None));
-//!     let orders = Table::new("orders").add_prop(("id", PropType::Int, None));
+//!     let users = Table::new("users").add_prop("id", PropType::Int32);
+//!     let orders = Table::new("orders").add_prop("id", PropType::Int32);
 //!     let db = Database::new("test");
 //!     let data = Step::new("Init Schema", StepType::Update, semver::Version::new(0, 0, 1))
+//!         .set_execution_mode(ExecutionMode::Optimistic)
 //!         .add_statement(&db, DbAction::Create)
 //!         .add_statement(&users, DbAction::Create)
 //!         .add_statement(&orders, DbAction::Create)
@@ -26,7 +27,6 @@
 //!     let client_conf = ConnectionConfig::<Postgres>::default();
 //!     let cortex_conf = CortexPostgresConfig {
 //!        plugins: vec![PostgresPlugins::Postgis, PostgresPlugins::Timescale],
-//!        execution_mode: ExecutionMode::Optimistic,
 //!        supported_db_versions: (
 //!            semver::Version::new(15, 0, 0),
 //!            semver::Version::new(16, 0, 0),
@@ -71,6 +71,7 @@ pub mod prelude {
     pub use crate::db::cortex::postgres::*;
     pub use crate::db::prelude::*;
     pub use crate::objects::prelude::*;
+    extern crate semver;
 }
 
 pub mod connection {

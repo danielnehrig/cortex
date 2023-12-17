@@ -26,13 +26,71 @@ pub struct ConnectionConfig<'a, T> {
     password: &'a str,
     database: &'a str,
     path: Option<&'a str>,
+    additional: Option<&'a str>,
     marker: std::marker::PhantomData<T>,
 }
 
 impl<'a, T> ConnectionConfig<'a, T> {
-    pub fn with_db(mut self, db: impl Into<&'a str>) -> Self {
-        self.database = db.into();
+    pub fn with_host(mut self, host: impl Into<&'a str>) -> Self {
+        self.host = host.into();
         self
+    }
+
+    pub fn with_port(mut self, port: u16) -> Self {
+        self.port = port;
+        self
+    }
+
+    pub fn with_username(mut self, username: impl Into<&'a str>) -> Self {
+        self.username = username.into();
+        self
+    }
+
+    pub fn with_password(mut self, password: impl Into<&'a str>) -> Self {
+        self.password = password.into();
+        self
+    }
+
+    pub fn with_path(mut self, path: impl Into<&'a str>) -> Self {
+        self.path = Some(path.into());
+        self
+    }
+
+    pub fn with_additional(mut self, additional: impl Into<&'static str>) -> Self {
+        self.additional = Some(additional.into());
+        self
+    }
+
+    pub fn with_db(mut self, database: impl Into<&'a str>) -> Self {
+        self.database = database.into();
+        self
+    }
+}
+
+impl From<ConnectionConfig<'_, postgres::Postgres>> for String {
+    fn from(config: ConnectionConfig<'_, postgres::Postgres>) -> Self {
+        format!(
+            "postgres://{}:{}@{}:{}/{}{}",
+            config.username,
+            config.password,
+            config.host,
+            config.port,
+            config.database,
+            config.path.unwrap_or_default()
+        )
+    }
+}
+
+impl From<ConnectionConfig<'_, mongodb::Mongo>> for String {
+    fn from(config: ConnectionConfig<'_, mongodb::Mongo>) -> Self {
+        format!(
+            "mongodb://{}:{}@{}/{}?{}",
+            config.username,
+            config.password,
+            config.host,
+            config.database,
+            config.additional.unwrap_or_default()
+        )
     }
 }
 
