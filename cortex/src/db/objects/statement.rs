@@ -37,4 +37,10 @@ impl Statement {
             _ => None,
         }
     }
+    pub fn get_as_composite_type(&self) -> Option<&CompositeType> {
+        match self {
+            Statement::CompositeType(ctype) => Some(ctype),
+            _ => None,
+        }
+    }
 }

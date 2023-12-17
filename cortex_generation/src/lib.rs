@@ -58,10 +58,7 @@ impl CortexGenerator {
         // get any enum member as table skip the rest
         let tables = stmts
             .iter()
-            .filter_map(|s| match s {
-                Statement::Table(t) => Some(t),
-                _ => None,
-            })
+            .filter_map(|s| s.get_as_table())
             .collect::<Vec<_>>();
         let build_structs = tables.into_iter().map(|x| {
             let name = Ident::new(
@@ -98,8 +95,46 @@ impl CortexGenerator {
 
     /// DB Composite Type struct generation
     #[allow(dead_code)]
-    fn generate_structs_from_db_type() {
-        todo!()
+    pub(crate) fn generate_structs_from_db_type(data: Vec<Step>) -> TokenStream {
+        let flatten = Step::flatten(data);
+        let stmts = flatten
+            .statements
+            .into_iter()
+            .map(|(s, _)| s)
+            .collect::<Vec<_>>();
+        // get any enum member as table skip the rest
+        let ctype = stmts
+            .iter()
+            .filter_map(|s| s.get_as_composite_type())
+            .collect::<Vec<_>>();
+        let build_structs = ctype.into_iter().map(|x| {
+            let name = Ident::new(
+                &(x.name.to_string()).to_case(Case::Pascal),
+                Span::call_site(),
+            );
+            let params = x
+                .props
+                .iter()
+                .map(|p| {
+                    let field_text = p.field.clone();
+                    let t_type =
+                        Ident::new(&p.field_type.clone().to_rust_type(), Span::call_site());
+                    let field_text = Ident::new(&field_text, Span::call_site());
+                    quote! {
+                        pub #field_text: #t_type
+                    }
+                })
+                .collect::<Vec<_>>();
+            quote! {
+              #[derive(Debug, Clone)]
+              pub struct #name {
+                #(#params),*
+              }
+            }
+        });
+        quote! {
+            #(#build_structs)*
+        }
     }
 
     #[allow(dead_code)]
